@@ -53,14 +53,46 @@ need_cmd python3
 
 fetch_json() {
   local path="$1"
-  curl -sS "${API_BASE}${path}" -H "x-api-key: ${API_KEY}"
+  local tmp_body status
+  tmp_body="$(mktemp)"
+  status="$(
+    curl -sSL -o "${tmp_body}" -w "%{http_code}" "${API_BASE}${path}" \
+      -H "x-api-key: ${API_KEY}"
+  )"
+  if [[ "${status}" -lt 200 || "${status}" -ge 300 ]]; then
+    echo "ERROR: ${path} returned HTTP ${status}" >&2
+    echo "ERROR: response: $(head -c 240 "${tmp_body}")" >&2
+    rm -f "${tmp_body}"
+    return 1
+  fi
+  cat "${tmp_body}"
+  rm -f "${tmp_body}"
+}
+
+parse_json_or_fail() {
+  local label="$1"
+  python3 -c '
+import json,sys
+label=sys.argv[1]
+raw=sys.stdin.read()
+try:
+    json.loads(raw)
+except Exception:
+    msg=raw.strip().replace("\n"," ")
+    print(f"ERROR: {label} is not valid JSON: {msg[:240]}", file=sys.stderr)
+    sys.exit(1)
+print(raw, end="")
+' "${label}"
 }
 
 if [[ -z "${REQ_ID}" ]]; then
   REQ_ID="$(
-    fetch_json "/requestors" | python3 -c '
+    fetch_json "/requestors" | parse_json_or_fail "/requestors" | python3 -c '
 import json,sys
 rows=json.load(sys.stdin)
+if isinstance(rows, dict):
+    print("")
+    sys.exit(0)
 print(rows[0]["requestor_id"] if rows else "")
 '
   )"
@@ -76,11 +108,15 @@ build_uplink_payload() {
   local requestor_json satellites_json ground_station_id satellite_id
 
   requestor_json="$(fetch_json "/requestors")"
+  requestor_json="$(printf '%s' "${requestor_json}" | parse_json_or_fail "/requestors")"
   ground_station_id="$(
     printf '%s' "${requestor_json}" | python3 -c '
 import json,sys
 rid=sys.argv[1]
 rows=json.load(sys.stdin)
+if not isinstance(rows, list):
+    print("")
+    sys.exit(0)
 row=next((r for r in rows if r.get("requestor_id")==rid), None)
 print((row or {}).get("ground_station_id",""))
 ' "${req_id}"
@@ -91,10 +127,14 @@ print((row or {}).get("ground_station_id",""))
   fi
 
   satellites_json="$(fetch_json "/satellites")"
+  satellites_json="$(printf '%s' "${satellites_json}" | parse_json_or_fail "/satellites")"
   satellite_id="$(
     printf '%s' "${satellites_json}" | python3 -c '
 import json,sys
 rows=json.load(sys.stdin)
+if not isinstance(rows, list):
+    print("")
+    sys.exit(0)
 sat=next((s for s in rows if s.get("status")=="AVAILABLE"), None)
 print((sat or {}).get("satellite_id",""))
 '
@@ -126,11 +166,12 @@ create_uplink_for_requestor() {
   local payload resp cmd_id
   payload="$(build_uplink_payload "${req_id}")" || return 1
   resp="$(
-    curl -sS -X POST "${API_BASE}/uplink" \
+    curl -sSL -X POST "${API_BASE}/uplink" \
       -H "x-api-key: ${API_KEY}" \
       -H "Content-Type: application/json" \
       -d "${payload}"
   )"
+  printf '%s' "${resp}" | parse_json_or_fail "/uplink" >/dev/null
   cmd_id="$(
     printf '%s' "${resp}" | python3 -c '
 import json,sys
@@ -151,7 +192,7 @@ print(obj.get("command_id",""))
 
 read_command_state() {
   local cmd_id="$1"
-  curl -sS "${API_BASE}/commands/${cmd_id}" -H "x-api-key: ${API_KEY}" | python3 -c '
+  fetch_json "/commands/${cmd_id}" | parse_json_or_fail "/commands/{id}" | python3 -c '
 import json,sys
 obj=json.load(sys.stdin)
 print(obj.get("state",""))
