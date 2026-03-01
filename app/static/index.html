@@ -1,0 +1,2392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>K-Sattie Sky Hub (uplink수신-> 위성촬영 -> downlink전송)</title>
+  <style>
+    :root {
+      --bg: #f2f4f8;
+      --panel: #ffffff;
+      --line: #d7dde8;
+      --text: #17202b;
+      --muted: #5d6c82;
+      --primary: #00695c;
+      --warn: #b26a00;
+      --ok: #0a7d3f;
+      --fail: #ad1f2f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Noto Sans", sans-serif;
+      background: radial-gradient(circle at 0% 0%, #eaf5ff, var(--bg) 40%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .title-note {
+      display: inline;
+      margin-left: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .role-note {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .subtitle { color: var(--muted); font-size: 12px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      flex: 1;
+      min-height: 0;
+    }
+    nav {
+      border-right: 1px solid var(--line);
+      padding: 12px;
+      background: #f7f9fc;
+    }
+    .tab-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      background: #fff;
+      margin-bottom: 8px;
+      padding: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active { border-color: var(--primary); color: var(--primary); }
+    main {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 0;
+    }
+    .tab { display: none; }
+    .tab.active { display: block; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .entity-group {
+      border: 1px solid #b9c9dc;
+      border-radius: 12px;
+      background: linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
+      padding: 10px;
+      margin-bottom: 12px;
+    }
+    .entity-group-title {
+      margin: 0 0 8px 0;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid #d2deec;
+      background: #edf3fb;
+      color: #27435f;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+    .entity-group .card {
+      margin-bottom: 8px;
+    }
+    .entity-group .card:last-child {
+      margin-bottom: 0;
+    }
+    h2 { margin: 0 0 10px 0; font-size: 16px; }
+    h3 { margin: 0 0 8px 0; font-size: 14px; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
+    input, select, button, textarea {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+    input, select, textarea { min-width: 120px; }
+    .uplink-text { min-width: 280px; width: 280px; }
+    .uplink-num { min-width: 210px; width: 210px; }
+    .uplink-num-sm { min-width: 72px; width: 72px; }
+    textarea { width: 100%; min-height: 120px; font-family: "IBM Plex Mono", monospace; }
+    button {
+      cursor: pointer;
+      background: #fff;
+      font-weight: 600;
+    }
+    header .row button {
+      font-weight: 400;
+    }
+    .action-link {
+      color: var(--primary);
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 10px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      font-size: 12px;
+    }
+    .action-link.delete {
+      color: var(--fail);
+    }
+    .gen-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 0;
+      white-space: nowrap;
+    }
+    .gen-choice input[type="radio"] {
+      min-width: 0;
+      width: auto;
+      margin: 0;
+      padding: 0;
+      accent-color: var(--primary);
+    }
+    .gen-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+    .gen-desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+    .custom-tooltip {
+      position: fixed;
+      z-index: 9999;
+      display: none;
+      max-width: 320px;
+      background: #1f2a37;
+      color: #f5f7fa;
+      border: 1px solid #3a4a60;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      line-height: 1.35;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      white-space: normal;
+    }
+    #previewImage {
+      cursor: grab;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    #previewImage.dragging {
+      cursor: grabbing;
+    }
+    .uplink-preview-section {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #8cc9a5;
+    }
+    .uplink-preview-title {
+      width: 100%;
+      margin: 0 0 8px 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .preview-box {
+      border: 1px dashed #8cc9a5;
+    }
+    .uplink-preview-section input,
+    .uplink-preview-section select,
+    .uplink-preview-section button {
+      border: 1px dashed #8cc9a5;
+    }
+    .uplink-preview-section #previewImage {
+      border: 1px dashed #8cc9a5 !important;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+    .modal {
+      width: min(460px, 100%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .modal-title {
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .modal-close {
+      border: 0;
+      background: transparent;
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 0 2px;
+    }
+    .modal-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .btn-primary {
+      border-color: var(--line);
+      color: var(--text);
+      background: #fff;
+    }
+    .send-uplink-btn {
+      border-color: var(--primary);
+      color: #fff;
+      background: var(--primary);
+      font-weight: 700;
+    }
+    button.selected {
+      border-color: var(--primary);
+      color: #fff;
+      background: var(--primary);
+    }
+    .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .kpi-nav-card { cursor: pointer; }
+    .kpi { font-size: 18px; font-weight: 700; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .badge {
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .downlink-thumb {
+      width: 72px;
+      height: 48px;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      display: block;
+      margin-bottom: 4px;
+      background: #f7f9fc;
+    }
+    .ok { color: var(--ok); border-color: #8cc9a5; }
+    .fail { color: var(--fail); border-color: #e4a7af; }
+    .warn { color: var(--warn); border-color: #e4c28f; }
+    table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+      table-layout: fixed;
+    }
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left; padding: 6px;
+      vertical-align: middle;
+      word-break: break-word;
+    }
+    .summary-cell {
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: "IBM Plex Mono", monospace;
+    }
+    .time-cell {
+      white-space: nowrap;
+    }
+    .method-cell {
+      white-space: nowrap;
+    }
+    .path-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status-cell {
+      white-space: nowrap;
+    }
+    .timeline { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .step {
+      padding: 5px 8px; border-radius: 20px; border: 1px solid var(--line);
+      font-size: 12px; background: #fff;
+    }
+    .step.current { border-color: var(--primary); color: var(--primary); font-weight: 700; }
+    pre {
+      margin: 0;
+      background: #121821;
+      color: #d6e2f0;
+      padding: 10px;
+      border-radius: 8px;
+      overflow: auto;
+      font-size: 12px;
+      max-height: 260px;
+    }
+    .footer-log {
+      position: static;
+      background: #fdfefe;
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .log-scroll {
+      min-height: 460px;
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      nav { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <div class="title">K-Sattie Sky Hub <span class="title-note">(uplink수신-> 위성촬영 -> downlink전송)</span></div>
+      <div class="subtitle">API Base URL: <span id="baseUrlLabel">http://localhost:6005</span></div>
+      <div id="authNotice" class="role-note"></div>
+    </div>
+    <div class="row">
+      <label for="mockUserSelect" title="콘솔 테스트용 사용자 역할을 선택합니다.">User
+        <select id="mockUserSelect" title="현재 사용자 계정(역할) 선택: admin/operator/requestor" onchange="onMockUserChange()"></select>
+      </label>
+      <input id="baseUrlInput" value="http://localhost:6005" title="K-Sattie Sky Hub API 기본 URL을 입력합니다." />
+      <input id="apiKeyInput" value="change-me" placeholder="x-api-key" title="운영 API 호출에 필요한 인증키(x-api-key)입니다. 서버의 SATTI_API_KEY 값과 동일하게 입력하세요." />
+      <button onclick="setBaseUrl()" title="입력한 API URL/API Key를 현재 콘솔 설정으로 적용합니다.">Apply URL</button>
+      <button onclick="clearImages()" title="생성된 다운링크 이미지를 서버에서 삭제하고 관련 명령 상태를 정리합니다.">Clear Images</button>
+      <button onclick="clearLogs()" title="화면 로그/결과 표시를 초기화합니다(서버 데이터는 유지).">Clear Logs</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard', this)" title="Sky Hub 주요 현황과 KPI를 확인합니다.">Dashboard</button>
+      <button class="tab-btn" data-tab="satellites" data-role-allow="admin" onclick="showTab('satellites', this)" title="위성/지상국 정보를 생성·수정·삭제하고 시드 데이터를 설정합니다.">Satellites Status</button>
+      <button class="tab-btn" data-tab="reports" onclick="showTab('reports', this)" title="위성별 촬영 성능 통계 리포트를 확인합니다.">Satellites Performance</button>
+      <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">Commands Status</button>
+      <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">Send 1 Uplink Scenario</button>
+      <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">Multi API Scenario</button>
+    </nav>
+
+    <main>
+      <section id="dashboard" class="tab active">
+        <div class="card">
+          <h2>Sky Hub Dashboard</h2>
+          <div class="row">
+            <button class="btn-primary" onclick="checkHealth()">Health Check</button>
+          </div>
+          <div id="healthResult" class="muted">No checks executed.</div>
+        </div>
+        <div class="grid">
+          <div class="card kpi-nav-card" onclick="openTabById('satellites')" title="Satellites Configuration 화면으로 이동"><h3>Satellites</h3><div id="kpiSatellites" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabById('satellites')" title="Satellites Configuration 화면으로 이동"><h3>Ground Stations</h3><div id="kpiGroundStations" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Uplink Commands</h3><div id="kpiCommands" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Downlink Ready</h3><div id="kpiReady" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Failed</h3><div id="kpiFailed" class="kpi">0</div></div>
+        </div>
+        <div class="card">
+          <h3>Command State Distribution</h3>
+          <div id="stateDist" class="muted">No command data.</div>
+        </div>
+        <div class="card">
+          <h3>Korean Satellite Seed Summary</h3>
+          <div id="koreanSeedSummary" class="muted">No satellite data.</div>
+          <pre id="koreanSeedNames">[]</pre>
+        </div>
+      </section>
+
+      <section id="satellites" class="tab">
+        <div class="card">
+          <h2>Satellites Configuration</h2>
+          <div class="row">
+            <button class="btn-primary" onclick="seedSatellites()" title="한국 위성 기반 초기 Mock 위성 데이터를 생성합니다. 이미 존재하는 동일 이름 위성은 중복 생성하지 않습니다.">Setup Initial Mock Satellites</button>
+            <button class="btn-primary" onclick="seedGroundStations()" title="업링크 요청 주체로 사용할 가상 지상국 데이터를 생성합니다.">Setup Initial Mock Ground Stations</button>
+            <button class="btn-primary" onclick="seedRequestors()" title="지상국별 초기 Mock 요청자(requestor) 데이터를 생성합니다.">Setup Initial Mock Requestors</button>
+            <button onclick="loadSatelliteTypes()">Show Satellite Types</button>
+          </div>
+        </div>
+        <div class="entity-group">
+          <div class="entity-group-title">Satellite Group</div>
+          <div class="card">
+            <h3>Create Satellite</h3>
+            <div class="row">
+              <input id="newSatName" placeholder="name" value="manual-sat" />
+              <select id="newSatType"><option>EO_OPTICAL</option><option>SAR</option></select>
+              <select id="newSatStatus"><option>AVAILABLE</option><option>MAINTENANCE</option></select>
+              <button class="btn-primary" onclick="createSatellite()">Create</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Satellites Table</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Status</th><th>Profile</th><th>Actions</th></tr></thead>
+              <tbody id="satelliteTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="entity-group">
+          <div class="entity-group-title">Ground Station Group</div>
+          <div class="card">
+            <h3>Create Ground Station</h3>
+            <div class="row">
+              <input id="newGroundStationName" placeholder="name" value="manual-gs" />
+              <select id="newGroundStationType">
+                <option>FIXED</option>
+                <option>LAND_MOBILE</option>
+                <option>MARITIME</option>
+                <option>AIRBORNE</option>
+              </select>
+              <select id="newGroundStationStatus"><option>OPERATIONAL</option><option>MAINTENANCE</option></select>
+              <input id="newGroundStationLocation" placeholder="location (optional)" value="" />
+              <button class="btn-primary" onclick="createGroundStation()">Create</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Ground Stations Table</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
+              <tbody id="groundStationTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="entity-group">
+          <div class="entity-group-title">Requestor Group</div>
+          <div class="card">
+            <h3>Create Requestor</h3>
+            <div class="row">
+              <input id="newRequestorName" placeholder="name" value="manual-requestor" />
+              <select id="newRequestorGroundStationId" class="uplink-num" title="소속 지상국 선택"></select>
+              <button class="btn-primary" onclick="createRequestor()">Create</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Requestors Table</h3>
+            <table>
+              <thead><tr><th>ID</th><th>Name</th><th>Ground Station</th><th>Actions</th></tr></thead>
+              <tbody id="requestorTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="uplink" class="tab">
+        <div class="card">
+          <h2>Send Uplink Command</h2>
+          <div class="row">
+            <select id="uplinkSatId" onchange="onUplinkSatelliteChanged()" title="촬영 명령을 보낼 대상 위성 선택"></select>
+            <select id="uplinkGroundStationId" class="uplink-num" title="업링크 요청 지상국 선택" onchange="onUplinkGroundStationChanged()">
+              <option value="">ground_station_id: (none)</option>
+            </select>
+            <select id="uplinkRequestorId" class="uplink-num" title="업링크 요청자 선택">
+              <option value="">requestor_id: (none)</option>
+            </select>
+            <input id="missionName" class="uplink-text" value="" placeholder="mission_name (임무명, 예: harbor-monitoring)" title="임무 이름(프로젝트/업무 식별자)" />
+            <input id="aoiName" class="uplink-text" value="" placeholder="aoi_name (촬영영역명, 예: incheon-port)" title="촬영 대상 지역 이름(AOI 식별용)" />
+            <select id="priority" class="uplink-num" title="요청 우선순위 선택">
+              <option value="COMMERCIAL">priority: COMMERCIAL</option>
+              <option value="URGENT">priority: URGENT</option>
+              <option value="BACKGROUND">priority: BACKGROUND</option>
+            </select>
+          </div>
+          <div class="row">
+            <input id="aoiCenterLat" class="uplink-num" type="number" step="0.000001" min="-90" max="90" placeholder="aoi_center_lat (예: 37.5665)" title="AOI 중심 위도(-90~90), 경도와 함께 입력" />
+            <input id="aoiCenterLon" class="uplink-num" type="number" step="0.000001" min="-180" max="180" placeholder="aoi_center_lon (예: 126.9780)" title="AOI 중심 경도(-180~180), 위도와 함께 입력" />
+            <input id="aoiBbox" class="uplink-text" value="" placeholder="aoi_bbox [minLon,minLat,maxLon,maxLat]" title="촬영 박스 범위 [최소경도,최소위도,최대경도,최대위도]" />
+          </div>
+          <div class="row">
+            <input id="windowOpenUtc" class="uplink-text" value="" placeholder="window_open_utc (ISO8601)" title="촬영 허용 시작 시각(UTC ISO8601)" />
+            <input id="windowCloseUtc" class="uplink-text" value="" placeholder="window_close_utc (ISO8601)" title="촬영 허용 종료 시각(UTC ISO8601, 시작보다 늦어야 함)" />
+          </div>
+          <div class="row">
+            <input id="imgWidth" class="uplink-num" type="number" value="" min="128" max="4096" placeholder="width px (기본 512)" title="생성 이미지 가로 픽셀(128~4096)" />
+            <input id="imgHeight" class="uplink-num" type="number" value="" min="128" max="4096" placeholder="height px (기본 512)" title="생성 이미지 세로 픽셀(128~4096)" />
+            <input id="cloudPercent" class="uplink-num" type="number" value="" min="0" max="100" placeholder="cloud % (기본 10)" title="시뮬레이션용 운량 비율(EO 기준, 0~100)" />
+            <input id="failProbability" class="uplink-num" type="number" value="" min="0" max="1" step="0.01" placeholder="fail prob 0~1 (기본 0)" title="명령 실패 확률(0~1), 테스트용" />
+          </div>
+          <div class="row">
+            <input id="maxCloudCoverPercent" class="uplink-num" type="number" value="" min="0" max="100" placeholder="max_cloud_cover_percent" title="허용 최대 구름량(EO 제약)" />
+            <input id="maxOffNadirDeg" class="uplink-num" type="number" value="" min="0" max="45" step="0.1" placeholder="max_off_nadir_deg" title="허용 최대 오프나딜 각(EO 제약)" />
+            <input id="minSunElevationDeg" class="uplink-num" type="number" value="" min="0" max="90" step="0.1" placeholder="min_sun_elevation_deg" title="촬영 시 최소 태양고도(EO 제약)" />
+          </div>
+          <div class="row">
+            <input id="incidenceMinDeg" class="uplink-num" type="number" value="" min="0" max="90" step="0.1" placeholder="incidence_min_deg" title="SAR 최소 입사각(incidence_max_deg 이하)" />
+            <input id="incidenceMaxDeg" class="uplink-num" type="number" value="" min="0" max="90" step="0.1" placeholder="incidence_max_deg" title="SAR 최대 입사각(incidence_min_deg 이상)" />
+            <select id="lookSide" class="uplink-num" title="SAR 관측 방향(좌/우)">
+              <option value="ANY">look_side: ANY</option>
+              <option value="LEFT">look_side: LEFT</option>
+              <option value="RIGHT">look_side: RIGHT</option>
+            </select>
+            <select id="passDirection" class="uplink-num" title="궤도 통과 방향(상행/하행)">
+              <option value="ANY">pass_direction: ANY</option>
+              <option value="ASCENDING">pass_direction: ASCENDING</option>
+              <option value="DESCENDING">pass_direction: DESCENDING</option>
+            </select>
+            <input id="polarization" class="uplink-num" value="" placeholder="polarization (VV/VH)" title="SAR 편파 예: VV, VH" />
+          </div>
+          <div class="row">
+            <select id="deliveryMethod" class="uplink-num" title="결과 전달 방식 선택">
+              <option value="DOWNLOAD">delivery_method: DOWNLOAD</option>
+              <option value="S3">delivery_method: S3</option>
+              <option value="WEBHOOK">delivery_method: WEBHOOK</option>
+            </select>
+            <input id="deliveryPath" class="uplink-text" value="" placeholder="delivery_path (S3 URI / webhook URL)" title="S3 또는 WEBHOOK일 때 필수 경로/URL" />
+          </div>
+          <div class="row">
+            <button class="send-uplink-btn" onclick="sendUplink()" title="입력값으로 업링크 명령 전송">Send Uplink</button>
+          </div>
+          <div class="uplink-preview-section">
+            <div class="uplink-preview-title">위성사진생성시뮬레이션 옵션(선택)</div>
+            <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
+              <label class="gen-choice" title="현재 방식. 서버 내부 로직으로 샘플 이미지 생성">
+                <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" checked onchange="setGenerationMode('INTERNAL')" />
+                <span>내부생성</span>
+              </label>
+              <span class="gen-desc">PIL library를 사용하여 간단한 패턴 이미지 생성해서 보냄</span>
+            </div>
+            <div class="row gen-option">
+              <label class="gen-choice" title="외부 지도 타일(위경도) 기반으로 이미지 생성">
+                <input id="modeExternalRadio" type="radio" name="generationMode" value="EXTERNAL" onchange="setGenerationMode('EXTERNAL')" />
+                <span>외부생성</span>
+              </label>
+              <span class="gen-desc">오픈소스맵 온라인 연동으로 지도맵 생성해서 보냄</span>
+              <select id="externalMapSource" class="uplink-num" title="외부 지도 소스">
+                <option value="OSM">external_map_source: OSM</option>
+              </select>
+              <input id="externalMapZoom" class="uplink-num-sm" type="number" min="1" max="19" value="19" placeholder="19" title="외부 지도 줌 레벨(1~19)" />
+              <button type="button" onclick="previewExternalMap()" title="현재 위경도/사이즈 기준으로 외부 지도 프리뷰 조회">Map Preview</button>
+            </div>
+            <div class="card preview-box">
+              <h3>External Map Preview</h3>
+              <div id="previewMeta" class="muted">No preview requested.</div>
+              <img id="previewImage" alt="map preview" style="display:none; margin-top:8px; width:100%; max-height:340px; object-fit:contain; border:1px solid var(--line); border-radius:8px; background:#f8fafc;" />
+            </div>
+          </div>
+          <pre id="uplinkResult">No uplink submitted.</pre>
+        </div>
+      </section>
+
+      <section id="commands" class="tab">
+        <div class="card">
+          <h2>Command Monitor</h2>
+          <div class="row">
+            <input id="commandIdInput" placeholder="cmd-..." />
+            <button onclick="fetchCommand()">Fetch</button>
+            <button onclick="retryFailedCommand()">Retry</button>
+          </div>
+          <div class="timeline" id="timeline"></div>
+          <div id="commandMeta" class="muted">No command selected.</div>
+          <div class="row">
+            <a id="downloadLink" href="#" target="_blank" rel="noopener noreferrer" class="badge">Download Link (inactive)</a>
+          </div>
+        </div>
+        <div class="card">
+          <h3>acquisition_metadata / product_metadata</h3>
+          <pre id="commandJson">{}</pre>
+        </div>
+        <div class="card">
+          <h3>Completed Image Links</h3>
+          <table>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
+            <tbody id="completedLinksBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="reports" class="tab">
+        <div class="card">
+          <h2>Satellite Imaging Performance Statistics</h2>
+          <div class="row">
+            <button class="btn-primary" onclick="refreshDashboard()">Refresh Report</button>
+            <span id="reportGeneratedAt" class="muted">No report generated.</span>
+          </div>
+          <div id="reportSummary" class="muted">No command data.</div>
+        </div>
+        <div class="card">
+          <h3>Satellite Performance Table</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Satellite</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Ready</th>
+                <th>Failed</th>
+                <th>In Progress</th>
+                <th>Success Rate</th>
+                <th>Avg Proc(s)</th>
+                <th>Last Capture At</th>
+                <th>Top Ground Station</th>
+              </tr>
+            </thead>
+            <tbody id="satelliteReportBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="scenarios" class="tab">
+        <div class="card">
+          <h2>Multi API Scenario Runner</h2>
+          <div class="row">
+            <button onclick="runScenario('SCN-001')">SCN-001 Normal EO</button>
+            <button onclick="runScenario('SCN-002')">SCN-002 Normal SAR</button>
+            <button onclick="runScenario('SCN-003')">SCN-003 Download 404</button>
+            <button onclick="runScenario('SCN-004')">SCN-004 Download 409</button>
+            <button onclick="runScenario('SCN-005')">SCN-005 Maintenance Fail</button>
+            <button onclick="runScenario('SCN-006')">SCN-006 Invalid Sat 404</button>
+          </div>
+          <div class="row">
+            <span class="badge ok" id="scnPass">Pass: 0</span>
+            <span class="badge fail" id="scnFail">Fail: 0</span>
+          </div>
+          <pre id="scenarioOutput">No scenario executed.</pre>
+        </div>
+      </section>
+
+      <div class="footer-log card">
+        <h3>Recent API Calls</h3>
+        <div class="log-scroll">
+          <table>
+            <colgroup>
+              <col style="width:10%" />
+              <col style="width:10%" />
+              <col style="width:20%" />
+              <col style="width:10%" />
+              <col style="width:50%" />
+            </colgroup>
+            <thead><tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>Summary</th></tr></thead>
+            <tbody id="apiLogs"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="satEditModalBackdrop" class="modal-backdrop" onclick="closeSatelliteEditModal(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="satEditModalTitle">
+      <div class="modal-header">
+        <div id="satEditModalTitle" class="modal-title">Edit Satellite</div>
+        <button class="modal-close" type="button" onclick="closeSatelliteEditModal()">&times;</button>
+      </div>
+      <div class="row">
+        <input id="modalEditSatName" placeholder="satellite name" style="width:100%;" />
+      </div>
+      <div class="row">
+        <select id="modalEditSatStatus" style="min-width:180px;">
+          <option>AVAILABLE</option>
+          <option>MAINTENANCE</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeSatelliteEditModal()">Cancel</button>
+        <button type="button" class="btn-primary" onclick="updateSatellite()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="gsEditModalBackdrop" class="modal-backdrop" onclick="closeGroundStationEditModal(event)">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="gsEditModalTitle">
+      <div class="modal-header">
+        <div id="gsEditModalTitle" class="modal-title">Edit Ground Station</div>
+        <button class="modal-close" type="button" onclick="closeGroundStationEditModal()">&times;</button>
+      </div>
+      <div class="row">
+        <input id="modalEditGsName" placeholder="ground station name" style="width:100%;" />
+      </div>
+      <div class="row">
+        <select id="modalEditGsType" style="min-width:180px;">
+          <option>FIXED</option>
+          <option>LAND_MOBILE</option>
+          <option>MARITIME</option>
+          <option>AIRBORNE</option>
+        </select>
+        <select id="modalEditGsStatus" style="min-width:180px;">
+          <option>OPERATIONAL</option>
+          <option>MAINTENANCE</option>
+        </select>
+      </div>
+      <div class="row">
+        <input id="modalEditGsLocation" placeholder="location (optional)" style="width:100%;" />
+      </div>
+      <div class="modal-actions">
+        <button type="button" onclick="closeGroundStationEditModal()">Cancel</button>
+        <button type="button" class="btn-primary" onclick="updateGroundStation()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STATE_ORDER = ["QUEUED", "ACKED", "CAPTURING", "DOWNLINK_READY", "FAILED"];
+    let apiBaseUrl = localStorage.getItem("simApiBaseUrl") || "http://localhost:6005";
+    let apiKey = localStorage.getItem("simApiKey") || "change-me";
+    let currentCommandId = "";
+    let fetchFollowTimer = null;
+    let passCount = 0;
+    let failCount = 0;
+    let editingSatelliteId = "";
+    let editingGroundStationId = "";
+    let generationMode = "INTERNAL";
+    const previewState = {
+      centerLat: null,
+      centerLon: null,
+      zoom: 19,
+      source: "OSM",
+      objectUrl: null,
+    };
+    const allCommands = new Map();
+    const satelliteNameById = new Map();
+    const satellitesById = new Map();
+    const groundStationsById = new Map();
+    const requestorsById = new Map();
+    const requestorsByStationId = new Map();
+    let MOCK_USERS = [
+      { user_id: "admin-001", name: "Admin Alice", role: "admin" },
+      { user_id: "operator-001", name: "Operator Owen", role: "operator" },
+    ];
+    let currentUser = MOCK_USERS[0];
+
+    function canManageInfra() {
+      return currentUser.role === "admin";
+    }
+
+    function hasTabAccess(tabId) {
+      if (currentUser.role === "admin") return true;
+      if (currentUser.role === "operator") {
+        return tabId !== "satellites";
+      }
+      if (currentUser.role === "requestor") {
+        return ["dashboard", "reports", "commands"].includes(tabId);
+      }
+      return false;
+    }
+
+    function isManagementApiCall(method, path) {
+      const normalizedPath = String(path || "").split("?")[0];
+      const upperMethod = String(method || "GET").toUpperCase();
+      if (upperMethod === "POST" && (normalizedPath === "/seed/mock-satellites" || normalizedPath === "/seed/mock-ground-stations" || normalizedPath === "/seed/mock-requestors")) {
+        return true;
+      }
+      if (!["POST", "PATCH", "DELETE"].includes(upperMethod)) return false;
+      if (normalizedPath === "/satellites" || normalizedPath === "/ground-stations" || normalizedPath === "/requestors") return true;
+      if (normalizedPath.startsWith("/satellites/")) return true;
+      if (normalizedPath.startsWith("/ground-stations/")) return true;
+      if (normalizedPath.startsWith("/requestors/")) return true;
+      return false;
+    }
+
+    function roleDeniedMessage() {
+      return `Access denied for role '${currentUser.role}': satellite/ground-station/requestor management is not allowed.`;
+    }
+
+    function currentRequestorScopeId() {
+      if (currentUser.role !== "requestor") return null;
+      const userId = String(currentUser.user_id || "");
+      if (!userId.startsWith("requestor-")) return null;
+      return userId.slice("requestor-".length);
+    }
+
+    function canViewCommand(command) {
+      const scopeRequestorId = currentRequestorScopeId();
+      if (!scopeRequestorId) return true;
+      return command && command.requestor_id === scopeRequestorId;
+    }
+
+    function applyRoleAccessControl() {
+      const notice = document.getElementById("authNotice");
+      if (notice) {
+        notice.textContent = `Current User: ${currentUser.name} (${currentUser.role})`;
+      }
+      document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
+        const tabId = btn.getAttribute("data-tab");
+        btn.style.display = hasTabAccess(tabId) ? "" : "none";
+      });
+      const activeTab = document.querySelector(".tab.active");
+      if (activeTab && !hasTabAccess(activeTab.id)) {
+        openTabById("dashboard");
+      }
+    }
+
+    function initMockUsers() {
+      const select = document.getElementById("mockUserSelect");
+      if (!select) return;
+      refreshMockUserSelect();
+      applyRoleAccessControl();
+    }
+
+    function refreshMockUserSelect(preferredUserId = null) {
+      const select = document.getElementById("mockUserSelect");
+      if (!select) return;
+      select.innerHTML = MOCK_USERS
+        .map((u) => `<option value="${u.user_id}">${u.name} (${u.role})</option>`)
+        .join("");
+      const savedId = preferredUserId || localStorage.getItem("simMockUserId");
+      const found = MOCK_USERS.find((u) => u.user_id === savedId) || MOCK_USERS[0];
+      currentUser = found;
+      select.value = found.user_id;
+      localStorage.setItem("simMockUserId", currentUser.user_id);
+    }
+
+    async function onMockUserChange() {
+      const select = document.getElementById("mockUserSelect");
+      const nextUser = MOCK_USERS.find((u) => u.user_id === select.value);
+      if (!nextUser) return;
+      currentUser = nextUser;
+      localStorage.setItem("simMockUserId", currentUser.user_id);
+      stopFetchFollow();
+      applyRoleAccessControl();
+      if (!hasTabAccess("satellites")) {
+        closeSatelliteEditModal();
+        closeGroundStationEditModal();
+      }
+      await refreshDashboard();
+      if (document.getElementById("commands").classList.contains("active")) {
+        await fetchCommand(true);
+      }
+      document.getElementById("healthResult").textContent = `Signed in as ${currentUser.name} (${currentUser.role}).`;
+    }
+
+    function syncMockUsersFromRequestors(rows) {
+      const keepUsers = MOCK_USERS.filter((u) => u.role !== "requestor");
+      const requestorUsers = rows.map((requestor) => ({
+        user_id: `requestor-${requestor.requestor_id}`,
+        name: requestor.name,
+        role: "requestor",
+      }));
+      MOCK_USERS = keepUsers.concat(requestorUsers);
+      refreshMockUserSelect(currentUser.user_id);
+      applyRoleAccessControl();
+    }
+
+    const UPLINK_PRESETS_BY_SEED_NAME = {
+      "KOMPSAT-3 (Arirang-3)": {
+        mission_name: "precision-urban-mapping",
+        aoi_name: "seoul-central",
+        aoi_center_lat: 37.5665,
+        aoi_center_lon: 126.9780,
+        aoi_bbox: [126.88, 37.48, 127.08, 37.66],
+        priority: "COMMERCIAL",
+        width: 1536,
+        height: 1536,
+        cloud_percent: 15,
+        max_cloud_cover_percent: 20,
+        max_off_nadir_deg: 20,
+        min_sun_elevation_deg: 25,
+        incidence_min_deg: null,
+        incidence_max_deg: null,
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: null,
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.05,
+      },
+      "KOMPSAT-3A (Arirang-3A)": {
+        mission_name: "night-thermal-watch",
+        aoi_name: "ulsan-industrial-zone",
+        aoi_center_lat: 35.5384,
+        aoi_center_lon: 129.3114,
+        aoi_bbox: [129.16, 35.45, 129.46, 35.63],
+        priority: "URGENT",
+        width: 1280,
+        height: 1280,
+        cloud_percent: 18,
+        max_cloud_cover_percent: 25,
+        max_off_nadir_deg: 25,
+        min_sun_elevation_deg: 18,
+        incidence_min_deg: null,
+        incidence_max_deg: null,
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: null,
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.05,
+      },
+      "CAS500-1 (NextSat-1)": {
+        mission_name: "agri-monitoring",
+        aoi_name: "jeolla-farmland",
+        aoi_center_lat: 35.1,
+        aoi_center_lon: 126.9,
+        aoi_bbox: [126.6, 34.85, 127.2, 35.35],
+        priority: "COMMERCIAL",
+        width: 1024,
+        height: 1024,
+        cloud_percent: 20,
+        max_cloud_cover_percent: 30,
+        max_off_nadir_deg: 18,
+        min_sun_elevation_deg: 20,
+        incidence_min_deg: null,
+        incidence_max_deg: null,
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: null,
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.05,
+      },
+      "Cheollian-2B (GEO-KOMPSAT-2B)": {
+        mission_name: "ocean-color-monitoring",
+        aoi_name: "yellow-sea-west-korea",
+        aoi_center_lat: 35.2,
+        aoi_center_lon: 124.8,
+        aoi_bbox: [123.8, 34.2, 125.8, 36.2],
+        priority: "BACKGROUND",
+        width: 768,
+        height: 768,
+        cloud_percent: 35,
+        max_cloud_cover_percent: 50,
+        max_off_nadir_deg: 30,
+        min_sun_elevation_deg: 15,
+        incidence_min_deg: null,
+        incidence_max_deg: null,
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: null,
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.06,
+      },
+      "KOMPSAT-5 (Arirang-5, SAR)": {
+        mission_name: "all-weather-port-watch",
+        aoi_name: "busan-port",
+        aoi_center_lat: 35.1028,
+        aoi_center_lon: 129.0403,
+        aoi_bbox: [128.92, 35.0, 129.16, 35.2],
+        priority: "URGENT",
+        width: 1024,
+        height: 1024,
+        cloud_percent: 0,
+        max_cloud_cover_percent: null,
+        max_off_nadir_deg: null,
+        min_sun_elevation_deg: null,
+        incidence_min_deg: 25,
+        incidence_max_deg: 40,
+        look_side: "RIGHT",
+        pass_direction: "DESCENDING",
+        polarization: "VV",
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.04,
+      },
+      "KOMPSAT-6 (Arirang-6, SAR)": {
+        mission_name: "disaster-rapid-response",
+        aoi_name: "gangwon-landslide-risk",
+        aoi_center_lat: 37.82,
+        aoi_center_lon: 128.2,
+        aoi_bbox: [127.85, 37.55, 128.55, 38.1],
+        priority: "URGENT",
+        width: 1280,
+        height: 1280,
+        cloud_percent: 0,
+        max_cloud_cover_percent: null,
+        max_off_nadir_deg: null,
+        min_sun_elevation_deg: null,
+        incidence_min_deg: 20,
+        incidence_max_deg: 42,
+        look_side: "LEFT",
+        pass_direction: "ASCENDING",
+        polarization: "VH",
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.04,
+      },
+      "KOMPSAT-Next-5 (C-band SAR)": {
+        mission_name: "maritime-domain-awareness",
+        aoi_name: "korea-strait",
+        aoi_center_lat: 34.5,
+        aoi_center_lon: 128.7,
+        aoi_bbox: [127.9, 34.0, 129.5, 35.1],
+        priority: "COMMERCIAL",
+        width: 1024,
+        height: 1024,
+        cloud_percent: 0,
+        max_cloud_cover_percent: null,
+        max_off_nadir_deg: null,
+        min_sun_elevation_deg: null,
+        incidence_min_deg: 22,
+        incidence_max_deg: 38,
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: "VV",
+        delivery_method: "DOWNLOAD",
+        delivery_path: null,
+        generation_mode: "INTERNAL",
+        fail_probability: 0.05,
+      },
+    };
+
+    function getTypeFallbackPreset(satType) {
+      if (satType === "SAR") {
+        return {
+          mission_name: "sar-tasking",
+          aoi_name: "default-sar-aoi",
+          aoi_center_lat: "",
+          aoi_center_lon: "",
+          aoi_bbox: "",
+          priority: "COMMERCIAL",
+          width: 1024,
+          height: 1024,
+          cloud_percent: 0,
+          max_cloud_cover_percent: "",
+          max_off_nadir_deg: "",
+          min_sun_elevation_deg: "",
+          incidence_min_deg: 20,
+          incidence_max_deg: 40,
+          look_side: "ANY",
+          pass_direction: "ANY",
+          polarization: "VV",
+          delivery_method: "DOWNLOAD",
+          delivery_path: "",
+          generation_mode: "INTERNAL",
+          fail_probability: 0.05,
+        };
+      }
+      return {
+        mission_name: "eo-tasking",
+        aoi_name: "default-eo-aoi",
+        aoi_center_lat: "",
+        aoi_center_lon: "",
+        aoi_bbox: "",
+        priority: "COMMERCIAL",
+        width: 1024,
+        height: 1024,
+        cloud_percent: 15,
+        max_cloud_cover_percent: 30,
+        max_off_nadir_deg: 20,
+        min_sun_elevation_deg: 20,
+        incidence_min_deg: "",
+        incidence_max_deg: "",
+        look_side: "ANY",
+        pass_direction: "ANY",
+        polarization: "",
+        delivery_method: "DOWNLOAD",
+        delivery_path: "",
+        generation_mode: "INTERNAL",
+        fail_probability: 0.05,
+      };
+    }
+
+    function toInputValue(value) {
+      return value === null || value === undefined ? "" : String(value);
+    }
+
+    function setGenerationMode(mode) {
+      generationMode = mode === "EXTERNAL" ? "EXTERNAL" : "INTERNAL";
+      const internalRadio = document.getElementById("modeInternalRadio");
+      const externalRadio = document.getElementById("modeExternalRadio");
+      if (internalRadio) internalRadio.checked = generationMode === "INTERNAL";
+      if (externalRadio) externalRadio.checked = generationMode === "EXTERNAL";
+    }
+
+    function applyUplinkPresetForSatellite(sat) {
+      if (!sat) return;
+      const seedPreset = UPLINK_PRESETS_BY_SEED_NAME[sat.name];
+      const preset = seedPreset || getTypeFallbackPreset(sat.type);
+      document.getElementById("missionName").value = toInputValue(preset.mission_name);
+      document.getElementById("aoiName").value = toInputValue(preset.aoi_name);
+      document.getElementById("aoiCenterLat").value = toInputValue(preset.aoi_center_lat);
+      document.getElementById("aoiCenterLon").value = toInputValue(preset.aoi_center_lon);
+      document.getElementById("aoiBbox").value = Array.isArray(preset.aoi_bbox) ? preset.aoi_bbox.join(",") : toInputValue(preset.aoi_bbox);
+      document.getElementById("priority").value = toInputValue(preset.priority || "COMMERCIAL");
+      document.getElementById("imgWidth").value = toInputValue(preset.width);
+      document.getElementById("imgHeight").value = toInputValue(preset.height);
+      document.getElementById("cloudPercent").value = toInputValue(preset.cloud_percent);
+      document.getElementById("maxCloudCoverPercent").value = toInputValue(preset.max_cloud_cover_percent);
+      document.getElementById("maxOffNadirDeg").value = toInputValue(preset.max_off_nadir_deg);
+      document.getElementById("minSunElevationDeg").value = toInputValue(preset.min_sun_elevation_deg);
+      document.getElementById("incidenceMinDeg").value = toInputValue(preset.incidence_min_deg);
+      document.getElementById("incidenceMaxDeg").value = toInputValue(preset.incidence_max_deg);
+      document.getElementById("lookSide").value = toInputValue(preset.look_side || "ANY");
+      document.getElementById("passDirection").value = toInputValue(preset.pass_direction || "ANY");
+      document.getElementById("polarization").value = toInputValue(preset.polarization);
+      document.getElementById("deliveryMethod").value = toInputValue(preset.delivery_method || "DOWNLOAD");
+      document.getElementById("deliveryPath").value = toInputValue(preset.delivery_path);
+      document.getElementById("failProbability").value = toInputValue(preset.fail_probability);
+      setGenerationMode(toInputValue(preset.generation_mode || "INTERNAL"));
+    }
+
+    function onUplinkSatelliteChanged() {
+      const satId = document.getElementById("uplinkSatId").value;
+      const sat = satellitesById.get(satId);
+      applyUplinkPresetForSatellite(sat);
+    }
+
+    function initCustomTooltips() {
+      const tip = document.createElement("div");
+      tip.id = "customTooltip";
+      tip.className = "custom-tooltip";
+      document.body.appendChild(tip);
+
+      const showTip = (e) => {
+        const text = e.currentTarget.getAttribute("data-tip");
+        if (!text) return;
+        tip.textContent = text;
+        tip.style.display = "block";
+        moveTip(e);
+      };
+
+      const moveTip = (e) => {
+        if (tip.style.display !== "block") return;
+        const offsetX = 14;
+        const offsetY = 0;
+        let x = e.clientX + offsetX;
+        let y = e.clientY + offsetY;
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        const tw = tip.offsetWidth;
+        const th = tip.offsetHeight;
+        if (x + tw > vw - 8) x = Math.max(8, e.clientX - tw - 10);
+        if (y + th > vh - 8) y = Math.max(8, vh - th - 8);
+        tip.style.left = `${x}px`;
+        tip.style.top = `${y}px`;
+      };
+
+      const hideTip = () => {
+        tip.style.display = "none";
+      };
+
+      document.querySelectorAll("header [title], #uplink [title], nav .tab-btn[title], #satellites [title]").forEach((el) => {
+        const title = el.getAttribute("title");
+        if (!title) return;
+        el.setAttribute("data-tip", title);
+        el.removeAttribute("title");
+        el.addEventListener("mouseenter", showTip);
+        el.addEventListener("mousemove", moveTip);
+        el.addEventListener("mouseleave", hideTip);
+        el.addEventListener("blur", hideTip);
+      });
+    }
+
+    function setBaseUrl() {
+      apiBaseUrl = document.getElementById("baseUrlInput").value.trim().replace(/\/$/, "");
+      apiKey = document.getElementById("apiKeyInput").value.trim();
+      localStorage.setItem("simApiBaseUrl", apiBaseUrl);
+      localStorage.setItem("simApiKey", apiKey);
+      document.getElementById("baseUrlLabel").textContent = apiBaseUrl;
+      logCall("SYS", "BASE", 200, apiBaseUrl);
+    }
+
+    function showTab(id, btn) {
+      if (!hasTabAccess(id)) {
+        document.getElementById("healthResult").textContent = roleDeniedMessage();
+        id = "dashboard";
+        btn = document.querySelector('.tab-btn[data-tab="dashboard"]');
+      }
+      document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      if (btn) btn.classList.add("active");
+      if (id === "dashboard" || id === "reports") {
+        refreshDashboard();
+      }
+    }
+
+    function openTabById(id) {
+      const btn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
+      showTab(id, btn || null);
+    }
+
+    function markButtonSelected(btn) {
+      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header")) return;
+      document.querySelectorAll("main button.selected").forEach((el) => el.classList.remove("selected"));
+      btn.classList.add("selected");
+    }
+
+    function clearLogs() {
+      stopFetchFollow();
+      document.getElementById("apiLogs").innerHTML = "";
+      document.getElementById("healthResult").textContent = "No checks executed.";
+      document.getElementById("uplinkResult").textContent = "No uplink submitted.";
+      document.getElementById("scenarioOutput").textContent = "No scenario executed.";
+      document.getElementById("commandJson").textContent = "{}";
+      document.getElementById("commandMeta").textContent = "No command selected.";
+      document.getElementById("timeline").innerHTML = "";
+      const link = document.getElementById("downloadLink");
+      link.href = "#";
+      link.textContent = "Download Link (inactive)";
+      link.className = "badge";
+      passCount = 0;
+      failCount = 0;
+      document.getElementById("scnPass").textContent = "Pass: 0";
+      document.getElementById("scnFail").textContent = "Fail: 0";
+      editingSatelliteId = "";
+      editingGroundStationId = "";
+      closeSatelliteEditModal();
+      closeGroundStationEditModal();
+    }
+
+    async function clearImages() {
+      const { response, payload } = await api("/images/clear", { method: "POST" });
+      if (!response.ok) {
+        document.getElementById("healthResult").textContent = `Clear images failed: ${JSON.stringify(payload)}`;
+        return;
+      }
+      document.getElementById("healthResult").textContent =
+        `Images cleared: ${payload.deleted_count}, Commands updated: ${payload.cleared_command_count}`;
+      // Pull latest command states so completed links disappear immediately.
+      await loadAllCommands();
+      renderCompletedLinks();
+      await refreshDashboard();
+    }
+
+    function logCall(method, path, status, summary = "") {
+      const tbody = document.getElementById("apiLogs");
+      const tr = document.createElement("tr");
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const mi = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      const timeLabel = `${mm}/${dd} ${hh}:${mi}:${ss}`;
+      tr.innerHTML = `<td class="time-cell">${timeLabel}</td><td class="method-cell">${method}</td><td class="path-cell" title="${escapeHtml(path)}">${escapeHtml(path)}</td><td class="status-cell">${status}</td><td class="summary-cell">${escapeHtml(summary)}</td>`;
+      tbody.prepend(tr);
+      while (tbody.children.length > 300) tbody.removeChild(tbody.lastChild);
+    }
+
+    function escapeHtml(v) {
+      return String(v)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatSummary(payload) {
+      if (typeof payload === "string") {
+        try {
+          const parsed = JSON.parse(payload);
+          return JSON.stringify(parsed, null, 2);
+        } catch (_) {
+          return payload;
+        }
+      }
+      return JSON.stringify(payload, null, 2);
+    }
+
+    function withApiKey(urlPath) {
+      const key = encodeURIComponent(apiKey || "");
+      if (!key) return `${apiBaseUrl}${urlPath}`;
+      const sep = urlPath.includes("?") ? "&" : "?";
+      return `${apiBaseUrl}${urlPath}${sep}api_key=${key}`;
+    }
+
+    function parseBboxInput(raw) {
+      if (!raw || !raw.trim()) return null;
+      const arr = raw.split(",").map((s) => Number(s.trim()));
+      if (arr.length !== 4 || arr.some((n) => !Number.isFinite(n))) return null;
+      return arr;
+    }
+
+    function derivePreviewCenter() {
+      const latRaw = document.getElementById("aoiCenterLat").value.trim();
+      const lonRaw = document.getElementById("aoiCenterLon").value.trim();
+      const lat = Number(latRaw);
+      const lon = Number(lonRaw);
+      if (Number.isFinite(lat) && Number.isFinite(lon)) {
+        return { lat, lon, source: "center" };
+      }
+      const bbox = parseBboxInput(document.getElementById("aoiBbox").value);
+      if (bbox) {
+        const [minLon, minLat, maxLon, maxLat] = bbox;
+        return {
+          lat: (minLat + maxLat) / 2,
+          lon: (minLon + maxLon) / 2,
+          source: "bbox-center",
+        };
+      }
+      return null;
+    }
+
+    function lonToWorldX(lon, zoom) {
+      const world = 256 * (2 ** zoom);
+      return ((lon + 180) / 360) * world;
+    }
+
+    function latToWorldY(lat, zoom) {
+      const world = 256 * (2 ** zoom);
+      const clamped = Math.max(-85.05112878, Math.min(85.05112878, lat));
+      const rad = clamped * Math.PI / 180;
+      const yNorm = (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2;
+      return yNorm * world;
+    }
+
+    function worldXToLon(x, zoom) {
+      const world = 256 * (2 ** zoom);
+      return (x / world) * 360 - 180;
+    }
+
+    function worldYToLat(y, zoom) {
+      const world = 256 * (2 ** zoom);
+      const n = Math.PI - 2 * Math.PI * (y / world);
+      return (180 / Math.PI) * Math.atan(Math.sinh(n));
+    }
+
+    function setCenterInputs(lat, lon) {
+      document.getElementById("aoiCenterLat").value = Number(lat).toFixed(6);
+      document.getElementById("aoiCenterLon").value = Number(lon).toFixed(6);
+    }
+
+    async function api(path, options = {}) {
+      const method = options.method || "GET";
+      if (isManagementApiCall(method, path) && !canManageInfra()) {
+        const payload = { detail: roleDeniedMessage(), role: currentUser.role };
+        const response = new Response(JSON.stringify(payload), {
+          status: 403,
+          headers: { "content-type": "application/json" },
+        });
+        logCall(method, path, response.status, formatSummary(payload));
+        return { response, payload };
+      }
+      const url = `${apiBaseUrl}${path}`;
+      const headers = new Headers(options.headers || {});
+      if (!headers.has("x-api-key") && apiKey) {
+        headers.set("x-api-key", apiKey);
+      }
+      const response = await fetch(url, { ...options, headers });
+      const contentType = response.headers.get("content-type") || "";
+      let payload;
+      if (contentType.includes("application/json")) payload = await response.json();
+      else payload = await response.text();
+      logCall(method, path, response.status, formatSummary(payload));
+      return { response, payload };
+    }
+
+    async function previewExternalMap() {
+      const previewMeta = document.getElementById("previewMeta");
+      const previewImage = document.getElementById("previewImage");
+      const center = derivePreviewCenter();
+      if (!center) {
+        previewMeta.textContent = "Preview failed: set AOI center(lat/lon) or valid bbox first.";
+        previewImage.style.display = "none";
+        previewImage.removeAttribute("src");
+        return;
+      }
+
+      const width = Number(document.getElementById("imgWidth").value) || 768;
+      const height = Number(document.getElementById("imgHeight").value) || 768;
+      const zoom = Number(document.getElementById("externalMapZoom").value) || 19;
+      const source = document.getElementById("externalMapSource").value || "OSM";
+      const qs = new URLSearchParams({
+        lat: String(center.lat),
+        lon: String(center.lon),
+        zoom: String(zoom),
+        width: String(width),
+        height: String(height),
+        source,
+      }).toString();
+      const path = `/preview/external-map?${qs}`;
+      const url = `${apiBaseUrl}${path}`;
+
+      try {
+        const headers = new Headers();
+        if (apiKey) headers.set("x-api-key", apiKey);
+        const res = await fetch(url, { headers });
+        if (!res.ok) {
+          const text = await res.text();
+          logCall("GET", path, res.status, text);
+          previewMeta.textContent = `Preview failed (${res.status}): ${text}`;
+          previewImage.style.display = "none";
+          previewImage.removeAttribute("src");
+          return;
+        }
+        const blob = await res.blob();
+        logCall("GET", path, res.status, `image/png ${blob.size} bytes`);
+        if (previewState.objectUrl) {
+          URL.revokeObjectURL(previewState.objectUrl);
+          previewState.objectUrl = null;
+        }
+        const objectUrl = URL.createObjectURL(blob);
+        previewState.objectUrl = objectUrl;
+        previewImage.src = objectUrl;
+        previewImage.style.display = "block";
+        previewState.centerLat = center.lat;
+        previewState.centerLon = center.lon;
+        previewState.zoom = zoom;
+        previewState.source = source;
+        previewMeta.textContent = `Preview loaded (${source}, zoom ${zoom}, center from ${center.source})`;
+      } catch (err) {
+        previewMeta.textContent = `Preview failed: ${String(err)}`;
+        previewImage.style.display = "none";
+        previewImage.removeAttribute("src");
+      }
+    }
+
+    function initPreviewPanHandlers() {
+      const previewImage = document.getElementById("previewImage");
+      const previewMeta = document.getElementById("previewMeta");
+      let dragging = false;
+      let moved = false;
+      let startClientX = 0;
+      let startClientY = 0;
+      let startWorldX = 0;
+      let startWorldY = 0;
+
+      const onMouseMove = (e) => {
+        if (!dragging) return;
+        moved = true;
+        const rect = previewImage.getBoundingClientRect();
+        const renderW = Math.max(1, rect.width);
+        const renderH = Math.max(1, rect.height);
+        const imgW = previewImage.naturalWidth || Number(document.getElementById("imgWidth").value) || 768;
+        const imgH = previewImage.naturalHeight || Number(document.getElementById("imgHeight").value) || 768;
+        const scaleX = imgW / renderW;
+        const scaleY = imgH / renderH;
+
+        const dx = (e.clientX - startClientX) * scaleX;
+        const dy = (e.clientY - startClientY) * scaleY;
+        const nextWorldX = startWorldX - dx;
+        const nextWorldY = startWorldY - dy;
+        const lat = worldYToLat(nextWorldY, previewState.zoom);
+        const lon = worldXToLon(nextWorldX, previewState.zoom);
+        previewState.centerLat = lat;
+        previewState.centerLon = lon;
+        setCenterInputs(lat, lon);
+        previewMeta.textContent = `Dragging preview... lat=${lat.toFixed(6)}, lon=${lon.toFixed(6)}`;
+      };
+
+      const onMouseUp = async () => {
+        if (!dragging) return;
+        dragging = false;
+        previewImage.classList.remove("dragging");
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        if (moved) {
+          await previewExternalMap();
+        }
+      };
+
+      previewImage.addEventListener("mousedown", (e) => {
+        if (previewImage.style.display === "none") return;
+        if (previewState.centerLat === null || previewState.centerLon === null) return;
+        dragging = true;
+        moved = false;
+        startClientX = e.clientX;
+        startClientY = e.clientY;
+        startWorldX = lonToWorldX(previewState.centerLon, previewState.zoom);
+        startWorldY = latToWorldY(previewState.centerLat, previewState.zoom);
+        previewImage.classList.add("dragging");
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+        e.preventDefault();
+      });
+    }
+
+    async function checkHealth() {
+      const { response, payload } = await api("/health");
+      document.getElementById("healthResult").textContent = `${response.status} - ${JSON.stringify(payload)}`;
+    }
+
+    async function loadSatelliteTypes() {
+      const { payload } = await api("/satellite-types");
+      const txt = Object.keys(payload || {}).join(", ");
+      document.getElementById("healthResult").textContent = `Types loaded: ${txt || "none"}`;
+    }
+
+    async function seedSatellites() {
+      const { payload } = await api("/seed/mock-satellites", { method: "POST" });
+      const created = Array.isArray(payload?.satellite_ids) ? payload.satellite_ids.length : 0;
+      document.getElementById("healthResult").textContent = `Seed done. Created ${created} satellites.`;
+      await listSatellites();
+      await refreshDashboard();
+    }
+
+    async function seedGroundStations() {
+      const { payload } = await api("/seed/mock-ground-stations", { method: "POST" });
+      const created = Array.isArray(payload?.ground_station_ids) ? payload.ground_station_ids.length : 0;
+      document.getElementById("healthResult").textContent = `Seed done. Created ${created} ground stations (and default requestors).`;
+      await listGroundStations();
+      await listRequestors();
+    }
+
+    async function seedRequestors() {
+      const { payload } = await api("/seed/mock-requestors", { method: "POST" });
+      const created = Array.isArray(payload?.requestor_ids) ? payload.requestor_ids.length : 0;
+      document.getElementById("healthResult").textContent = `Seed done. Created ${created} requestors.`;
+      await listRequestors();
+    }
+
+    async function createSatellite() {
+      const body = {
+        name: document.getElementById("newSatName").value,
+        type: document.getElementById("newSatType").value,
+        status: document.getElementById("newSatStatus").value,
+      };
+      const { response } = await api("/satellites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Satellite created.";
+        await listSatellites();
+        await refreshDashboard();
+      }
+    }
+
+    async function createGroundStation() {
+      const body = {
+        name: document.getElementById("newGroundStationName").value,
+        type: document.getElementById("newGroundStationType").value,
+        status: document.getElementById("newGroundStationStatus").value,
+        location: document.getElementById("newGroundStationLocation").value.trim() || null,
+      };
+      const { response } = await api("/ground-stations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Ground station created.";
+        await listGroundStations();
+        await listRequestors();
+      }
+    }
+
+    async function createRequestor() {
+      const body = {
+        name: document.getElementById("newRequestorName").value,
+        ground_station_id: document.getElementById("newRequestorGroundStationId").value,
+      };
+      if (!body.ground_station_id) {
+        document.getElementById("healthResult").textContent = "Requestor create failed: select ground station.";
+        return;
+      }
+      const { response } = await api("/requestors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Requestor created.";
+        await listRequestors();
+      }
+    }
+
+    async function listSatellites() {
+      const { payload } = await api("/satellites");
+      const rows = Array.isArray(payload) ? payload : [];
+      satellitesById.clear();
+      for (const sat of rows) satellitesById.set(sat.satellite_id, sat);
+      const tbody = document.getElementById("satelliteTable");
+      tbody.innerHTML = rows.map((sat) => `
+        <tr>
+          <td>${sat.satellite_id}</td>
+          <td>${sat.name}</td>
+          <td>${sat.type}</td>
+          <td><span class="${sat.status === "AVAILABLE" ? "ok" : "fail"}">${sat.status}</span></td>
+          <td>${sat.profile.orbit_type}, ${sat.profile.default_product_type}</td>
+          <td>
+            <a href="#" class="action-link" onclick="startEditSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}','${sat.status}'); return false;">Edit</a>
+            <a href="#" class="action-link delete" onclick="deleteSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}'); return false;">Delete</a>
+          </td>
+        </tr>
+      `).join("");
+
+      const sel = document.getElementById("uplinkSatId");
+      const prevSelected = sel.value;
+      sel.innerHTML = rows.map((sat) => `<option value="${sat.satellite_id}">${sat.name} (${sat.type}, ${sat.status})</option>`).join("");
+      if (prevSelected && satellitesById.has(prevSelected)) {
+        sel.value = prevSelected;
+      }
+      if (sel.value) {
+        onUplinkSatelliteChanged();
+      }
+      return rows;
+    }
+
+    async function listGroundStations() {
+      const { payload } = await api("/ground-stations");
+      const rows = Array.isArray(payload) ? payload : [];
+      groundStationsById.clear();
+      for (const station of rows) groundStationsById.set(station.ground_station_id, station);
+
+      const groundTable = document.getElementById("groundStationTable");
+      if (groundTable) {
+        groundTable.innerHTML = rows.map((station) => `
+          <tr>
+            <td>${station.ground_station_id}</td>
+            <td>${station.name}</td>
+            <td>${station.type}</td>
+            <td><span class="${station.status === "OPERATIONAL" ? "ok" : "fail"}">${station.status}</span></td>
+            <td>${station.location || "-"}</td>
+            <td>
+              <a href="#" class="action-link" onclick="startEditGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}','${station.type}','${station.status}','${escapeHtml(station.location || "")}'); return false;">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}'); return false;">Delete</a>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      const sel = document.getElementById("uplinkGroundStationId");
+      const prevSelected = sel.value;
+      const options = ['<option value="">ground_station_id: (none)</option>'];
+      for (const station of rows) {
+        options.push(`<option value="${station.ground_station_id}">${station.name} (${station.type}, ${station.status})</option>`);
+      }
+      sel.innerHTML = options.join("");
+      if (prevSelected && groundStationsById.has(prevSelected)) {
+        sel.value = prevSelected;
+      }
+
+      const reqStationSel = document.getElementById("newRequestorGroundStationId");
+      const reqStationPrev = reqStationSel ? reqStationSel.value : "";
+      if (reqStationSel) {
+        reqStationSel.innerHTML = rows.map((station) => `<option value="${station.ground_station_id}">${station.name}</option>`).join("");
+        if (reqStationPrev && groundStationsById.has(reqStationPrev)) {
+          reqStationSel.value = reqStationPrev;
+        }
+      }
+      onUplinkGroundStationChanged();
+      return rows;
+    }
+
+    async function listRequestors() {
+      const { payload } = await api("/requestors");
+      const rows = Array.isArray(payload) ? payload : [];
+      requestorsById.clear();
+      requestorsByStationId.clear();
+      for (const requestor of rows) {
+        requestorsById.set(requestor.requestor_id, requestor);
+        if (!requestorsByStationId.has(requestor.ground_station_id)) {
+          requestorsByStationId.set(requestor.ground_station_id, []);
+        }
+        requestorsByStationId.get(requestor.ground_station_id).push(requestor);
+      }
+
+      const table = document.getElementById("requestorTable");
+      if (table) {
+        table.innerHTML = rows.map((requestor) => `
+          <tr>
+            <td>${requestor.requestor_id}</td>
+            <td>${requestor.name}</td>
+            <td>${requestor.ground_station_name || requestor.ground_station_id}</td>
+            <td>
+              <a href="#" class="action-link" onclick="editRequestor('${requestor.requestor_id}'); return false;">Edit</a>
+              <a href="#" class="action-link delete" onclick="deleteRequestor('${requestor.requestor_id}','${escapeHtml(requestor.name)}'); return false;">Delete</a>
+            </td>
+          </tr>
+        `).join("");
+      }
+      syncMockUsersFromRequestors(rows);
+      onUplinkGroundStationChanged();
+      return rows;
+    }
+
+    async function deleteRequestor(requestorId, name) {
+      const ok = window.confirm(`Delete requestor '${name}' (${requestorId})?`);
+      if (!ok) return;
+      const { response } = await api(`/requestors/${requestorId}`, { method: "DELETE" });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Requestor deleted.";
+        await listRequestors();
+      }
+    }
+
+    async function editRequestor(requestorId) {
+      const current = requestorsById.get(requestorId);
+      if (!current) {
+        document.getElementById("healthResult").textContent = `Requestor not found: ${requestorId}`;
+        return;
+      }
+      const nextNameRaw = window.prompt("Edit requestor name", current.name || "");
+      if (nextNameRaw === null) return;
+      const nextName = nextNameRaw.trim();
+      if (!nextName) {
+        document.getElementById("healthResult").textContent = "Requestor edit failed: name is required.";
+        return;
+      }
+      const { response } = await api(`/requestors/${requestorId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: nextName,
+        }),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Requestor updated.";
+        await listRequestors();
+      }
+    }
+
+    function onUplinkGroundStationChanged() {
+      const stationId = (document.getElementById("uplinkGroundStationId").value || "").trim();
+      const requestorSel = document.getElementById("uplinkRequestorId");
+      const prevSelected = requestorSel.value;
+      const options = ['<option value="">requestor_id: (none)</option>'];
+      const rows = stationId ? (requestorsByStationId.get(stationId) || []) : [];
+      for (const requestor of rows) {
+        options.push(`<option value="${requestor.requestor_id}">${requestor.name}</option>`);
+      }
+      requestorSel.innerHTML = options.join("");
+      if (prevSelected && rows.some((requestor) => requestor.requestor_id === prevSelected)) {
+        requestorSel.value = prevSelected;
+      }
+    }
+
+    function startEditGroundStation(groundStationId, name, type, status, location) {
+      editingGroundStationId = groundStationId;
+      document.getElementById("modalEditGsName").value = name;
+      document.getElementById("modalEditGsType").value = type;
+      document.getElementById("modalEditGsStatus").value = status;
+      document.getElementById("modalEditGsLocation").value = location || "";
+      const backdrop = document.getElementById("gsEditModalBackdrop");
+      backdrop.style.display = "flex";
+      document.getElementById("modalEditGsName").focus();
+      document.getElementById("gsEditModalTitle").textContent = `Edit Ground Station (${groundStationId})`;
+    }
+
+    function closeGroundStationEditModal(event = null) {
+      const backdrop = document.getElementById("gsEditModalBackdrop");
+      if (event && event.target && event.target.id !== "gsEditModalBackdrop") {
+        return;
+      }
+      backdrop.style.display = "none";
+      editingGroundStationId = "";
+      document.getElementById("modalEditGsName").value = "";
+      document.getElementById("modalEditGsType").value = "FIXED";
+      document.getElementById("modalEditGsStatus").value = "OPERATIONAL";
+      document.getElementById("modalEditGsLocation").value = "";
+    }
+
+    async function updateGroundStation() {
+      if (!editingGroundStationId) return;
+      const body = {
+        name: document.getElementById("modalEditGsName").value,
+        type: document.getElementById("modalEditGsType").value,
+        status: document.getElementById("modalEditGsStatus").value,
+        location: document.getElementById("modalEditGsLocation").value.trim() || null,
+      };
+      const { response } = await api(`/ground-stations/${editingGroundStationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent = "Ground station updated.";
+        closeGroundStationEditModal();
+        editingGroundStationId = "";
+        await listGroundStations();
+      }
+    }
+
+    async function deleteGroundStation(groundStationId, name) {
+      const ok = window.confirm(`Delete ground station '${name}' (${groundStationId})?`);
+      if (!ok) return;
+      const { response } = await api(`/ground-stations/${groundStationId}`, { method: "DELETE" });
+      if (response.ok) {
+        if (editingGroundStationId === groundStationId) {
+          editingGroundStationId = "";
+          closeGroundStationEditModal();
+        }
+        document.getElementById("healthResult").textContent = "Ground station deleted.";
+        await listGroundStations();
+      }
+    }
+
+    function startEditSatellite(satelliteId, name, status) {
+      editingSatelliteId = satelliteId;
+      document.getElementById("modalEditSatName").value = name;
+      document.getElementById("modalEditSatStatus").value = status;
+      const backdrop = document.getElementById("satEditModalBackdrop");
+      backdrop.style.display = "flex";
+      document.getElementById("modalEditSatName").focus();
+      document.getElementById("satEditModalTitle").textContent = `Edit Satellite (${satelliteId})`;
+    }
+
+    function closeSatelliteEditModal(event = null) {
+      const backdrop = document.getElementById("satEditModalBackdrop");
+      if (event && event.target && event.target.id !== "satEditModalBackdrop") {
+        return;
+      }
+      backdrop.style.display = "none";
+      editingSatelliteId = "";
+      document.getElementById("modalEditSatName").value = "";
+      document.getElementById("modalEditSatStatus").value = "AVAILABLE";
+    }
+
+    async function updateSatellite() {
+      if (!editingSatelliteId) return;
+      const body = {
+        name: document.getElementById("modalEditSatName").value,
+        status: document.getElementById("modalEditSatStatus").value,
+      };
+      const { response } = await api(`/satellites/${editingSatelliteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.ok) {
+        document.getElementById("healthResult").textContent =
+          "Satellite updated.";
+        closeSatelliteEditModal();
+        editingSatelliteId = "";
+        await listSatellites();
+        await refreshDashboard();
+      }
+    }
+
+    async function deleteSatellite(satelliteId, name) {
+      const ok = window.confirm(`Delete satellite '${name}' (${satelliteId})?`);
+      if (!ok) return;
+      const { response } = await api(`/satellites/${satelliteId}`, { method: "DELETE" });
+      if (response.ok) {
+        if (editingSatelliteId === satelliteId) {
+          editingSatelliteId = "";
+          closeSatelliteEditModal();
+        }
+        document.getElementById("healthResult").textContent =
+          "Satellite deleted.";
+        await listSatellites();
+        await refreshDashboard();
+      }
+    }
+
+    async function fetchSatelliteCountOnly() {
+      const { payload } = await api("/satellites");
+      const rows = Array.isArray(payload) ? payload : [];
+      satelliteNameById.clear();
+      for (const sat of rows) {
+        satelliteNameById.set(sat.satellite_id, sat.name);
+      }
+      return { count: rows.length, rows };
+    }
+
+    async function loadAllCommands() {
+      const { response, payload } = await api("/commands");
+      if (!response.ok || !Array.isArray(payload)) return;
+      for (const cmd of payload) {
+        allCommands.set(cmd.command_id, cmd);
+      }
+    }
+
+    async function sendUplink(custom = null) {
+      const toNum = (v, fallback) => {
+        if (v === null || v === undefined || String(v).trim() === "") return fallback;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+      };
+      const toOptionalNum = (v) => {
+        if (v === null || v === undefined || String(v).trim() === "") return null;
+        const n = Number(v);
+        return Number.isFinite(n) ? n : null;
+      };
+      const parseBbox = (raw) => {
+        if (!raw || !raw.trim()) return null;
+        const arr = raw.split(",").map((s) => Number(s.trim()));
+        if (arr.length !== 4 || arr.some((n) => !Number.isFinite(n))) return null;
+        return arr;
+      };
+      const missionInput = document.getElementById("missionName").value.trim();
+      const aoiInput = document.getElementById("aoiName").value.trim();
+      const lat = toOptionalNum(document.getElementById("aoiCenterLat").value);
+      const lon = toOptionalNum(document.getElementById("aoiCenterLon").value);
+      const selectedGroundStationId = document.getElementById("uplinkGroundStationId").value.trim();
+      const selectedRequestorId = document.getElementById("uplinkRequestorId").value.trim();
+      const body = custom || {
+        satellite_id: document.getElementById("uplinkSatId").value,
+        ground_station_id: selectedGroundStationId || null,
+        requestor_id: selectedRequestorId || null,
+        mission_name: missionInput || "mission-demo",
+        aoi_name: aoiInput || "default-aoi",
+        aoi_center_lat: lat,
+        aoi_center_lon: lon,
+        aoi_bbox: parseBbox(document.getElementById("aoiBbox").value),
+        window_open_utc: document.getElementById("windowOpenUtc").value.trim() || null,
+        window_close_utc: document.getElementById("windowCloseUtc").value.trim() || null,
+        priority: document.getElementById("priority").value,
+        width: toNum(document.getElementById("imgWidth").value, 512),
+        height: toNum(document.getElementById("imgHeight").value, 512),
+        cloud_percent: toNum(document.getElementById("cloudPercent").value, 10),
+        max_cloud_cover_percent: toOptionalNum(document.getElementById("maxCloudCoverPercent").value),
+        max_off_nadir_deg: toOptionalNum(document.getElementById("maxOffNadirDeg").value),
+        min_sun_elevation_deg: toOptionalNum(document.getElementById("minSunElevationDeg").value),
+        incidence_min_deg: toOptionalNum(document.getElementById("incidenceMinDeg").value),
+        incidence_max_deg: toOptionalNum(document.getElementById("incidenceMaxDeg").value),
+        look_side: document.getElementById("lookSide").value,
+        pass_direction: document.getElementById("passDirection").value,
+        polarization: document.getElementById("polarization").value.trim() || null,
+        delivery_method: document.getElementById("deliveryMethod").value,
+        delivery_path: document.getElementById("deliveryPath").value.trim() || null,
+        generation_mode: generationMode,
+        external_map_source: document.getElementById("externalMapSource").value,
+        external_map_zoom: toNum(document.getElementById("externalMapZoom").value, 19),
+        fail_probability: toNum(document.getElementById("failProbability").value, 0),
+      };
+      const { response, payload } = await api("/uplink", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!response.ok) {
+        document.getElementById("uplinkResult").textContent = `Uplink failed (${response.status})\n${JSON.stringify(payload, null, 2)}`;
+        return payload;
+      }
+
+      document.getElementById("uplinkResult").textContent = JSON.stringify(payload, null, 2);
+      if (payload && payload.command_id) {
+        currentCommandId = payload.command_id;
+        document.getElementById("commandIdInput").value = currentCommandId;
+        if (!custom) {
+          openTabById("commands");
+          await fetchCommand();
+        }
+      } else {
+        document.getElementById("uplinkResult").textContent = `Uplink response has no command_id\n${JSON.stringify(payload, null, 2)}`;
+      }
+      return payload;
+    }
+
+    function renderTimeline(state) {
+      const el = document.getElementById("timeline");
+      el.innerHTML = STATE_ORDER.map((s) => `<span class="step ${state === s ? "current" : ""}">${s}</span>`).join("");
+    }
+
+    async function fetchCommand(fromFollow = false) {
+      const id = document.getElementById("commandIdInput").value.trim();
+      if (!id) return;
+      currentCommandId = id;
+      const { response, payload } = await api(`/commands/${id}`);
+      if (!response.ok) {
+        document.getElementById("commandMeta").textContent = `Error: ${JSON.stringify(payload)}`;
+        const link = document.getElementById("downloadLink");
+        link.href = "#";
+        link.textContent = "Download Link (inactive)";
+        link.className = "badge";
+        return payload;
+      }
+      if (!canViewCommand(payload)) {
+        document.getElementById("commandMeta").textContent = "Access denied: this command does not belong to current requestor.";
+        document.getElementById("commandJson").textContent = "{}";
+        renderTimeline("");
+        const link = document.getElementById("downloadLink");
+        link.href = "#";
+        link.textContent = "Download Link (inactive)";
+        link.className = "badge";
+        stopFetchFollow();
+        return null;
+      }
+      allCommands.set(id, payload);
+      renderTimeline(payload.state);
+      document.getElementById("commandMeta").innerHTML = `State: <b>${payload.state}</b> | Message: ${escapeHtml(payload.message || "-")}`;
+      document.getElementById("commandJson").textContent = JSON.stringify({
+        acquisition_metadata: payload.acquisition_metadata,
+        product_metadata: payload.product_metadata,
+      }, null, 2);
+      const link = document.getElementById("downloadLink");
+      if (payload.state === "DOWNLINK_READY" && payload.download_url) {
+        link.href = withApiKey(payload.download_url);
+        link.textContent = "Download Image";
+        link.className = "badge ok";
+      } else {
+        link.href = "#";
+        link.textContent = "Download Link (inactive)";
+        link.className = "badge";
+      }
+      await refreshDashboard();
+      // If user clicked Fetch once during transient states, keep following
+      // briefly so the UI can reflect DOWNLINK_READY automatically.
+      const isTerminal = payload.state === "DOWNLINK_READY" || payload.state === "FAILED";
+      if (!fromFollow && !isTerminal) {
+        startFetchFollow(id);
+      }
+      if (isTerminal) {
+        stopFetchFollow();
+      }
+      return payload;
+    }
+
+    async function retryFailedCommand() {
+      const id = document.getElementById("commandIdInput").value.trim();
+      if (!id) return;
+      const { response, payload } = await api(`/commands/${id}/rerun`, { method: "POST" });
+      if (!response.ok) {
+        document.getElementById("commandMeta").textContent = `Retry failed: ${JSON.stringify(payload)}`;
+        return;
+      }
+      currentCommandId = id;
+      allCommands.set(id, payload);
+      renderTimeline(payload.state);
+      document.getElementById("commandMeta").innerHTML = `State: <b>${payload.state}</b> | Message: ${escapeHtml(payload.message || "-")}`;
+      document.getElementById("commandJson").textContent = JSON.stringify({
+        acquisition_metadata: payload.acquisition_metadata,
+        product_metadata: payload.product_metadata,
+      }, null, 2);
+      startFetchFollow(id);
+    }
+
+    function stopFetchFollow() {
+      if (fetchFollowTimer) {
+        clearInterval(fetchFollowTimer);
+        fetchFollowTimer = null;
+      }
+    }
+
+    function startFetchFollow(commandId) {
+      stopFetchFollow();
+      let tries = 0;
+      fetchFollowTimer = setInterval(async () => {
+        tries += 1;
+        document.getElementById("commandIdInput").value = commandId;
+        const payload = await fetchCommand(true);
+        if (!payload || payload.state === "DOWNLINK_READY" || payload.state === "FAILED" || tries >= 30) {
+          stopFetchFollow();
+        }
+      }, 1000);
+    }
+
+    async function refreshDashboard() {
+      await loadAllCommands();
+      const satInfo = await fetchSatelliteCountOnly();
+      const { payload: groundPayload } = await api("/ground-stations");
+      const groundRows = Array.isArray(groundPayload) ? groundPayload : [];
+      document.getElementById("kpiSatellites").textContent = satInfo.count;
+      document.getElementById("kpiGroundStations").textContent = groundRows.length;
+      const commands = Array.from(allCommands.values());
+      document.getElementById("kpiCommands").textContent = commands.length;
+      const ready = commands.filter(c => c.state === "DOWNLINK_READY").length;
+      const failed = commands.filter(c => c.state === "FAILED").length;
+      document.getElementById("kpiReady").textContent = ready;
+      document.getElementById("kpiFailed").textContent = failed;
+      const dist = {};
+      for (const c of commands) dist[c.state] = (dist[c.state] || 0) + 1;
+      document.getElementById("stateDist").textContent = Object.keys(dist).length ? JSON.stringify(dist) : "No command data.";
+      const eoCount = satInfo.rows.filter((s) => s.type === "EO_OPTICAL").length;
+      const sarCount = satInfo.rows.filter((s) => s.type === "SAR").length;
+      document.getElementById("koreanSeedSummary").textContent =
+        `Total ${satInfo.count} satellites (EO ${eoCount}, SAR ${sarCount})`;
+      document.getElementById("koreanSeedNames").textContent = JSON.stringify(
+        satInfo.rows.map((s) => ({ name: s.name, type: s.type })),
+        null,
+        2,
+      );
+      renderCompletedLinks();
+      renderSatelliteReport(satInfo.rows, commands);
+    }
+
+    function renderCompletedLinks() {
+      const body = document.getElementById("completedLinksBody");
+      const rows = Array.from(allCommands.values())
+        .filter((cmd) => canViewCommand(cmd))
+        .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+
+      body.innerHTML = rows.map((cmd) => {
+        let link = `<span class="muted">Not Ready</span>`;
+        if (cmd.state === "FAILED") {
+          link = `<span class="fail">FAILED</span>`;
+        } else if (cmd.download_url) {
+          const downlinkUrl = withApiKey(cmd.download_url);
+          link = `<a href="${downlinkUrl}" target="_blank" rel="noopener noreferrer"><img class="downlink-thumb" src="${downlinkUrl}" alt="downlink thumbnail" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" /></a><a href="${downlinkUrl}" target="_blank" rel="noopener noreferrer">Download</a>`;
+        }
+        const selectAction = `<a href="#" class="action-link" onclick="selectCommandForMonitor('${cmd.command_id}'); return false;">Select</a>`;
+        const imageCreatedAt = cmd.acquisition_metadata?.captured_at || cmd.updated_at || "-";
+        const satName = satelliteNameById.get(cmd.satellite_id) || cmd.satellite_id;
+        return `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${cmd.state}</td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`;
+      }).join("");
+    }
+
+    function renderSatelliteReport(satRows, commandRows) {
+      const body = document.getElementById("satelliteReportBody");
+      const generatedAtEl = document.getElementById("reportGeneratedAt");
+      const summaryEl = document.getElementById("reportSummary");
+      if (!body || !generatedAtEl || !summaryEl) return;
+
+      const statsBySatId = new Map();
+      for (const sat of satRows) {
+        statsBySatId.set(sat.satellite_id, {
+          satellite_id: sat.satellite_id,
+          name: sat.name,
+          type: sat.type,
+          status: sat.status,
+          total: 0,
+          ready: 0,
+          failed: 0,
+          in_progress: 0,
+          durations: [],
+          last_capture_at: null,
+          ground_station_count: {},
+        });
+      }
+
+      for (const cmd of commandRows) {
+        const satId = cmd.satellite_id;
+        if (!statsBySatId.has(satId)) {
+          statsBySatId.set(satId, {
+            satellite_id: satId,
+            name: satelliteNameById.get(satId) || satId,
+            type: "-",
+            status: "-",
+            total: 0,
+            ready: 0,
+            failed: 0,
+            in_progress: 0,
+            durations: [],
+            last_capture_at: null,
+            ground_station_count: {},
+          });
+        }
+        const st = statsBySatId.get(satId);
+        st.total += 1;
+        if (cmd.state === "DOWNLINK_READY") st.ready += 1;
+        else if (cmd.state === "FAILED") st.failed += 1;
+        else st.in_progress += 1;
+
+        if (cmd.created_at && cmd.updated_at && (cmd.state === "DOWNLINK_READY" || cmd.state === "FAILED")) {
+          const created = Date.parse(cmd.created_at);
+          const updated = Date.parse(cmd.updated_at);
+          if (Number.isFinite(created) && Number.isFinite(updated) && updated >= created) {
+            st.durations.push((updated - created) / 1000);
+          }
+        }
+
+        const capturedAt = cmd.acquisition_metadata?.captured_at || null;
+        if (capturedAt && (!st.last_capture_at || Date.parse(capturedAt) > Date.parse(st.last_capture_at))) {
+          st.last_capture_at = capturedAt;
+        }
+
+        const stationName = cmd.ground_station_name || "(none)";
+        st.ground_station_count[stationName] = (st.ground_station_count[stationName] || 0) + 1;
+      }
+
+      const rows = Array.from(statsBySatId.values()).sort((a, b) => {
+        if (b.total !== a.total) return b.total - a.total;
+        return String(a.name).localeCompare(String(b.name));
+      });
+
+      const best = rows[0] || null;
+      const readyTotal = rows.reduce((acc, r) => acc + r.ready, 0);
+      const failedTotal = rows.reduce((acc, r) => acc + r.failed, 0);
+      summaryEl.textContent = rows.length
+        ? `Satellites: ${rows.length}, Commands: ${commandRows.length}, Ready: ${readyTotal}, Failed: ${failedTotal}${best ? `, Most Active: ${best.name}(${best.total})` : ""}`
+        : "No command data.";
+
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="11" class="muted">No report data.</td></tr>`;
+        generatedAtEl.textContent = `Generated at: ${new Date().toLocaleString()}`;
+        return;
+      }
+
+      body.innerHTML = rows.map((r) => {
+        const terminal = r.ready + r.failed;
+        const successRate = terminal > 0 ? `${((r.ready / terminal) * 100).toFixed(1)}%` : "-";
+        const avgProc = r.durations.length
+          ? (r.durations.reduce((a, b) => a + b, 0) / r.durations.length).toFixed(2)
+          : "-";
+        const topStation = Object.entries(r.ground_station_count).sort((a, b) => b[1] - a[1])[0];
+        const topStationLabel = topStation ? `${topStation[0]} (${topStation[1]})` : "-";
+        return `<tr>
+          <td>${escapeHtml(r.name)}</td>
+          <td>${escapeHtml(r.type)}</td>
+          <td>${escapeHtml(r.status)}</td>
+          <td>${r.total}</td>
+          <td>${r.ready}</td>
+          <td>${r.failed}</td>
+          <td>${r.in_progress}</td>
+          <td>${successRate}</td>
+          <td>${avgProc}</td>
+          <td>${r.last_capture_at ? escapeHtml(r.last_capture_at) : "-"}</td>
+          <td>${escapeHtml(topStationLabel)}</td>
+        </tr>`;
+      }).join("");
+
+      generatedAtEl.textContent = `Generated at: ${new Date().toLocaleString()}`;
+    }
+
+    function selectCommandForMonitor(commandId) {
+      currentCommandId = commandId;
+      document.getElementById("commandIdInput").value = commandId;
+      document.getElementById("commandMeta").textContent = `Selected: ${commandId} (Fetch: 조회, Retry: 실패건 재수행)`;
+    }
+
+    function markScenario(ok) {
+      if (ok) passCount += 1;
+      else failCount += 1;
+      document.getElementById("scnPass").textContent = `Pass: ${passCount}`;
+      document.getElementById("scnFail").textContent = `Fail: ${failCount}`;
+    }
+
+    async function runScenario(id) {
+      const out = [];
+      const push = (m) => { out.push(m); document.getElementById("scenarioOutput").textContent = out.join("\n"); };
+      try {
+        push(`[${id}] start`);
+        const sats = await listSatellites();
+        let stations = await listGroundStations();
+        let reqRows = await listRequestors();
+        if (sats.length === 0) {
+          push("No satellites -> seeding");
+          await seedSatellites();
+        }
+        if (stations.length === 0) {
+          push("No ground stations -> seeding");
+          await seedGroundStations();
+          stations = await listGroundStations();
+          reqRows = await listRequestors();
+        }
+        const freshSats = await listSatellites();
+        const primaryStationId = stations[0]?.ground_station_id || null;
+        const primaryRequestorId = reqRows.find((r) => r.ground_station_id === primaryStationId)?.requestor_id || null;
+
+        if (id === "SCN-001") {
+          const eo = freshSats.find(s => s.type === "EO_OPTICAL" && s.status === "AVAILABLE");
+          const up = await sendUplink({ satellite_id: eo.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-001", aoi_name: "aoi", width: 512, height: 512, cloud_percent: 12, fail_probability: 0 });
+          for (let i = 0; i < 12; i++) {
+            document.getElementById("commandIdInput").value = up.command_id;
+            const cmd = await fetchCommand();
+            if (cmd.state === "DOWNLINK_READY") break;
+            await new Promise(r => setTimeout(r, 400));
+          }
+          const cmd = allCommands.get(up.command_id);
+          const ok = cmd && cmd.state === "DOWNLINK_READY";
+          push(ok ? "PASS: EO downlink ready" : `FAIL: state=${cmd ? cmd.state : "unknown"}`);
+          markScenario(ok);
+          return;
+        }
+
+        if (id === "SCN-002") {
+          const sar = freshSats.find(s => s.type === "SAR" && s.status === "AVAILABLE");
+          const up = await sendUplink({ satellite_id: sar.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-002", aoi_name: "aoi", width: 512, height: 512, cloud_percent: 10, fail_probability: 0 });
+          let cmd = null;
+          for (let i = 0; i < 12; i++) {
+            document.getElementById("commandIdInput").value = up.command_id;
+            cmd = await fetchCommand();
+            if (cmd.state === "DOWNLINK_READY") break;
+            await new Promise(r => setTimeout(r, 400));
+          }
+          const ok = cmd && cmd.product_metadata && cmd.product_metadata.product_type === "GRD";
+          push(ok ? "PASS: SAR metadata detected" : "FAIL: SAR metadata missing");
+          markScenario(ok);
+          return;
+        }
+
+        if (id === "SCN-003") {
+          const { response } = await api("/downloads/cmd-not-exists");
+          const ok = response.status === 404;
+          push(ok ? "PASS: 404 detected" : `FAIL: status=${response.status}`);
+          markScenario(ok);
+          return;
+        }
+
+        if (id === "SCN-004") {
+          const eo = freshSats.find(s => s.type === "EO_OPTICAL" && s.status === "AVAILABLE");
+          const up = await sendUplink({ satellite_id: eo.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-004", aoi_name: "aoi", fail_probability: 0 });
+          const { response } = await api(`/downloads/${up.command_id}`);
+          const ok = response.status === 409;
+          push(ok ? "PASS: 409 detected before ready" : `FAIL: status=${response.status}`);
+          markScenario(ok);
+          return;
+        }
+
+        if (id === "SCN-005") {
+          const { payload } = await api("/satellites", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: "maint-sat", type: "EO_OPTICAL", status: "MAINTENANCE" }),
+          });
+          const up = await sendUplink({ satellite_id: payload.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-005", aoi_name: "aoi", fail_probability: 0 });
+          document.getElementById("commandIdInput").value = up.command_id;
+          const cmd = await fetchCommand();
+          const ok = cmd.state === "FAILED";
+          push(ok ? "PASS: maintenance fail verified" : `FAIL: state=${cmd.state}`);
+          markScenario(ok);
+          return;
+        }
+
+        if (id === "SCN-006") {
+          const { response } = await api("/uplink", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ satellite_id: "sat-invalid-1234", mission_name: "scn-006", aoi_name: "aoi" }),
+          });
+          const ok = response.status === 404;
+          push(ok ? "PASS: invalid satellite 404" : `FAIL: status=${response.status}`);
+          markScenario(ok);
+          return;
+        }
+      } catch (e) {
+        push(`ERROR: ${String(e)}`);
+        markScenario(false);
+      }
+    }
+
+    async function bootstrap() {
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("button");
+        if (!btn || btn.classList.contains("tab-btn")) return;
+        markButtonSelected(btn);
+      });
+      initMockUsers();
+      document.getElementById("baseUrlInput").value = apiBaseUrl;
+      document.getElementById("apiKeyInput").value = apiKey;
+      document.getElementById("baseUrlLabel").textContent = apiBaseUrl;
+      initCustomTooltips();
+      initPreviewPanHandlers();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeSatelliteEditModal();
+          closeGroundStationEditModal();
+        }
+      });
+      document.getElementById("previewImage").style.display = "none";
+      document.getElementById("previewImage").removeAttribute("src");
+      await listSatellites();
+      const stations = await listGroundStations();
+      let requestors = await listRequestors();
+      if (stations.length > 0 && requestors.length === 0) {
+        await seedRequestors();
+        requestors = await listRequestors();
+      }
+      await refreshDashboard();
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

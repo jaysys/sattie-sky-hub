@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Remove local temporary/generated artifacts before push.
+rm -f downlink_req-*.png downlink_*.png sattie-sky-hub_source_backup_*.tar.gz || true
+find . -name '.DS_Store' -type f -delete || true
