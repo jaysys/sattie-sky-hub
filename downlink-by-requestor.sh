@@ -40,6 +40,7 @@ API_KEY="${API_KEY:-change-me}"
 REQ_ID="${1:-}"
 WAIT_TIMEOUT_SEC="${WAIT_TIMEOUT_SEC:-30}"
 WAIT_INTERVAL_SEC="${WAIT_INTERVAL_SEC:-1}"
+DEBUG="${DEBUG:-0}"
 
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || {
@@ -163,14 +164,30 @@ print(json.dumps({
 
 create_uplink_for_requestor() {
   local req_id="$1"
-  local payload resp cmd_id
+  local payload resp cmd_id status tmp_body
   payload="$(build_uplink_payload "${req_id}")" || return 1
-  resp="$(
-    curl -sSL -X POST "${API_BASE}/uplink" \
+  if [[ -z "${payload//[[:space:]]/}" ]]; then
+    echo "ERROR: generated uplink payload is empty" >&2
+    return 1
+  fi
+  if [[ "${DEBUG}" == "1" ]]; then
+    echo "DEBUG: uplink payload=${payload}" >&2
+  fi
+
+  tmp_body="$(mktemp)"
+  status="$(
+    curl -sSL -o "${tmp_body}" -w "%{http_code}" -X POST "${API_BASE}/uplink" \
       -H "x-api-key: ${API_KEY}" \
       -H "Content-Type: application/json" \
-      -d "${payload}"
+      --data-binary "${payload}"
   )"
+  resp="$(cat "${tmp_body}")"
+  rm -f "${tmp_body}"
+  if [[ "${DEBUG}" == "1" ]]; then
+    echo "DEBUG: /uplink status=${status}" >&2
+    echo "DEBUG: /uplink response=${resp}" >&2
+  fi
+
   printf '%s' "${resp}" | parse_json_or_fail "/uplink" >/dev/null
   cmd_id="$(
     printf '%s' "${resp}" | python3 -c '
@@ -184,7 +201,7 @@ print(obj.get("command_id",""))
 '
   )"
   if [[ -z "${cmd_id}" ]]; then
-    echo "ERROR: uplink creation failed: ${resp}" >&2
+    echo "ERROR: uplink creation failed (HTTP ${status}): ${resp}" >&2
     return 1
   fi
   printf '%s' "${cmd_id}"
