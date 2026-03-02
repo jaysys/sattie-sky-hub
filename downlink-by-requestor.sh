@@ -52,6 +52,8 @@ need_cmd() {
 need_cmd curl
 need_cmd python3
 
+API_BASE="${API_BASE%/}"
+
 fetch_json() {
   local path="$1"
   local tmp_body status
@@ -176,7 +178,8 @@ create_uplink_for_requestor() {
 
   tmp_body="$(mktemp)"
   status="$(
-    curl -sSL -o "${tmp_body}" -w "%{http_code}" -X POST "${API_BASE}/uplink" \
+    curl -sS -L --post301 --post302 --post303 \
+      -o "${tmp_body}" -w "%{http_code}" -X POST "${API_BASE}/uplink" \
       -H "x-api-key: ${API_KEY}" \
       -H "Content-Type: application/json" \
       --data-binary "${payload}"
