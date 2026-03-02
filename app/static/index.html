@@ -1651,7 +1651,7 @@
         type: document.getElementById("newSatType").value,
         status: document.getElementById("newSatStatus").value,
       };
-      const { response } = await api("/satellites", {
+      const { response, payload } = await api("/satellites", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1659,6 +1659,13 @@
       if (response.ok) {
         document.getElementById("healthResult").textContent = "Satellite created.";
         await listSatellites();
+        if (payload?.satellite_id) {
+          const sel = document.getElementById("uplinkSatId");
+          if (sel) {
+            sel.value = payload.satellite_id;
+            onUplinkSatelliteChanged();
+          }
+        }
         await refreshDashboard();
       }
     }
@@ -1671,7 +1678,7 @@
         status: document.getElementById("newGroundStationStatus").value,
         location: document.getElementById("newGroundStationLocation").value.trim() || null,
       };
-      const { response } = await api("/ground-stations", {
+      const { response, payload } = await api("/ground-stations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1679,6 +1686,17 @@
       if (response.ok) {
         document.getElementById("healthResult").textContent = "Ground station created.";
         await listGroundStations();
+        if (payload?.ground_station_id) {
+          const uplinkStationSel = document.getElementById("uplinkGroundStationId");
+          if (uplinkStationSel) {
+            uplinkStationSel.value = payload.ground_station_id;
+          }
+          const reqStationSel = document.getElementById("newRequestorGroundStationId");
+          if (reqStationSel) {
+            reqStationSel.value = payload.ground_station_id;
+          }
+          onUplinkGroundStationChanged();
+        }
         await listRequestors();
       }
     }
@@ -1693,7 +1711,7 @@
         document.getElementById("healthResult").textContent = "Requestor create failed: select ground station.";
         return;
       }
-      const { response } = await api("/requestors", {
+      const { response, payload } = await api("/requestors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1701,6 +1719,19 @@
       if (response.ok) {
         document.getElementById("healthResult").textContent = "Requestor created.";
         await listRequestors();
+        if (body.ground_station_id) {
+          const uplinkStationSel = document.getElementById("uplinkGroundStationId");
+          if (uplinkStationSel) {
+            uplinkStationSel.value = body.ground_station_id;
+          }
+          onUplinkGroundStationChanged();
+        }
+        if (payload?.requestor_id) {
+          const uplinkReqSel = document.getElementById("uplinkRequestorId");
+          if (uplinkReqSel) {
+            uplinkReqSel.value = payload.requestor_id;
+          }
+        }
       }
     }
 
@@ -2036,17 +2067,55 @@
       const aoiInput = document.getElementById("aoiName").value.trim();
       const lat = toOptionalNum(document.getElementById("aoiCenterLat").value);
       const lon = toOptionalNum(document.getElementById("aoiCenterLon").value);
-      const selectedGroundStationId = document.getElementById("uplinkGroundStationId").value.trim();
-      const selectedRequestorId = document.getElementById("uplinkRequestorId").value.trim();
+      const parsedBbox = parseBbox(document.getElementById("aoiBbox").value);
+      let effectiveLat = lat;
+      let effectiveLon = lon;
+      let effectiveBbox = parsedBbox;
+      let selectedGroundStationId = document.getElementById("uplinkGroundStationId").value.trim();
+      let selectedRequestorId = document.getElementById("uplinkRequestorId").value.trim();
+      if (!custom && selectedRequestorId) {
+        const requestor = requestorsById.get(selectedRequestorId);
+        const ownerStationId = requestor?.ground_station_id || "";
+        if (!selectedGroundStationId && ownerStationId) {
+          selectedGroundStationId = ownerStationId;
+          const stationSel = document.getElementById("uplinkGroundStationId");
+          if (stationSel) stationSel.value = ownerStationId;
+          onUplinkGroundStationChanged();
+          const reqSel = document.getElementById("uplinkRequestorId");
+          if (reqSel) reqSel.value = selectedRequestorId;
+        } else if (selectedGroundStationId && ownerStationId && selectedGroundStationId !== ownerStationId) {
+          document.getElementById("healthResult").textContent =
+            "선택한 requestor가 소속된 ground station과 업링크 ground station이 다릅니다. 자동으로 소속 ground station으로 맞췄습니다.";
+          selectedGroundStationId = ownerStationId;
+          const stationSel = document.getElementById("uplinkGroundStationId");
+          if (stationSel) stationSel.value = ownerStationId;
+          onUplinkGroundStationChanged();
+          const reqSel = document.getElementById("uplinkRequestorId");
+          if (reqSel) reqSel.value = selectedRequestorId;
+        }
+      }
+      if (!custom && generationMode === "EXTERNAL") {
+        const hasCenter = effectiveLat !== null && effectiveLon !== null;
+        const hasBbox = Array.isArray(effectiveBbox) && effectiveBbox.length === 4;
+        if (!hasCenter && !hasBbox) {
+          const fallbackLat = Number.isFinite(previewState.centerLat) ? previewState.centerLat : 37.5665;
+          const fallbackLon = Number.isFinite(previewState.centerLon) ? previewState.centerLon : 126.9780;
+          effectiveLat = fallbackLat;
+          effectiveLon = fallbackLon;
+          setCenterInputs(fallbackLat, fallbackLon);
+          document.getElementById("healthResult").textContent =
+            "EXTERNAL 모드 기본값에 AOI가 없어 중심좌표(서울)로 자동 보정했습니다.";
+        }
+      }
       const body = custom || {
         satellite_id: document.getElementById("uplinkSatId").value,
         ground_station_id: selectedGroundStationId || null,
         requestor_id: selectedRequestorId || null,
         mission_name: missionInput || "시연 임무",
         aoi_name: aoiInput || "기본 촬영지역",
-        aoi_center_lat: lat,
-        aoi_center_lon: lon,
-        aoi_bbox: parseBbox(document.getElementById("aoiBbox").value),
+        aoi_center_lat: effectiveLat,
+        aoi_center_lon: effectiveLon,
+        aoi_bbox: effectiveBbox,
         window_open_utc: document.getElementById("windowOpenUtc").value.trim() || null,
         window_close_utc: document.getElementById("windowCloseUtc").value.trim() || null,
         priority: document.getElementById("priority").value,
