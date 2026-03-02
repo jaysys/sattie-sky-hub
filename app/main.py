@@ -19,6 +19,7 @@ from urllib import request as url_request
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.responses import JSONResponse
 from pydantic import BaseModel, Field, model_validator
 from PIL import Image
@@ -368,6 +369,7 @@ class Command:
 
 
 app = FastAPI(title="K-Sattie Sky Hub", version="0.3.0")
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 satellites: dict[str, Satellite] = {}
 ground_stations: dict[str, GroundStation] = {}
