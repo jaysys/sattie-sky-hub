@@ -440,6 +440,22 @@
       flex: 1;
       min-height: 0;
     }
+    .footer-log-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .footer-log-head h3 {
+      margin: 0;
+    }
+    .log-debug-toggle {
+      min-width: 88px;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
     .site-footer {
       border-top: 1px solid var(--line);
       background: #ffffff;
@@ -459,6 +475,15 @@
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
+    }
+    .log-scroll table.debug-off thead {
+      display: none;
+    }
+    .api-log-one-line {
+      font-family: "IBM Plex Mono", monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .dashboard-hero-wrap {
       width: 100%;
@@ -856,9 +881,12 @@
       </section>
 
       <div class="footer-log card">
-        <h3>Recent API Calls</h3>
+        <div class="footer-log-head">
+          <h3>Recent API Calls</h3>
+          <button id="debugLogToggle" type="button" class="btn-primary log-debug-toggle" onclick="toggleDebugLogs()">Debug ON</button>
+        </div>
         <div class="log-scroll">
-          <table>
+          <table id="apiLogsTable">
             <colgroup>
               <col style="width:10%" />
               <col style="width:10%" />
@@ -956,9 +984,11 @@
     let fetchFollowTimer = null;
     let passCount = 0;
     let failCount = 0;
+    let apiCallLogs = [];
     let editingSatelliteId = "";
     let editingGroundStationId = "";
     let generationMode = "INTERNAL";
+    let debugLogPretty = localStorage.getItem("debugLogPretty") !== "off";
     const previewState = {
       centerLat: null,
       centerLon: null,
@@ -1448,14 +1478,15 @@
     }
 
     function markButtonSelected(btn) {
-      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header")) return;
+      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header") || btn.id === "debugLogToggle") return;
       document.querySelectorAll("main button.selected").forEach((el) => el.classList.remove("selected"));
       btn.classList.add("selected");
     }
 
     function clearLogs() {
       stopFetchFollow();
-      document.getElementById("apiLogs").innerHTML = "";
+      apiCallLogs = [];
+      renderApiLogs();
       document.getElementById("healthResult").textContent = "No checks executed.";
       document.getElementById("uplinkResult").textContent = "No uplink submitted.";
       document.getElementById("scenarioOutput").textContent = "No scenario executed.";
@@ -1491,8 +1522,6 @@
     }
 
     function logCall(method, path, status, summary = "") {
-      const tbody = document.getElementById("apiLogs");
-      const tr = document.createElement("tr");
       const now = new Date();
       const mm = String(now.getMonth() + 1).padStart(2, "0");
       const dd = String(now.getDate()).padStart(2, "0");
@@ -1500,9 +1529,45 @@
       const mi = String(now.getMinutes()).padStart(2, "0");
       const ss = String(now.getSeconds()).padStart(2, "0");
       const timeLabel = `${mm}/${dd} ${hh}:${mi}:${ss}`;
-      tr.innerHTML = `<td class="time-cell">${timeLabel}</td><td class="method-cell">${method}</td><td class="path-cell" title="${escapeHtml(path)}">${escapeHtml(path)}</td><td class="status-cell">${status}</td><td class="summary-cell">${escapeHtml(summary)}</td>`;
-      tbody.prepend(tr);
-      while (tbody.children.length > 100) tbody.removeChild(tbody.lastChild);
+      apiCallLogs.unshift({ method, path, status, summary, timeLabel });
+      while (apiCallLogs.length > 100) apiCallLogs.pop();
+      renderApiLogs();
+    }
+
+    function toSingleLine(text) {
+      return String(text ?? "").replace(/\s+/g, " ").trim();
+    }
+
+    function updateDebugToggleButton() {
+      const btn = document.getElementById("debugLogToggle");
+      if (!btn) return;
+      btn.textContent = debugLogPretty ? "Debug ON" : "Debug OFF";
+      btn.classList.toggle("selected", debugLogPretty);
+    }
+
+    function toggleDebugLogs() {
+      debugLogPretty = !debugLogPretty;
+      localStorage.setItem("debugLogPretty", debugLogPretty ? "on" : "off");
+      updateDebugToggleButton();
+      renderApiLogs();
+    }
+
+    function renderApiLogs() {
+      const tbody = document.getElementById("apiLogs");
+      const table = document.getElementById("apiLogsTable");
+      if (!tbody || !table) return;
+      table.classList.toggle("debug-off", !debugLogPretty);
+      tbody.innerHTML = "";
+      apiCallLogs.forEach((entry) => {
+        const tr = document.createElement("tr");
+        if (debugLogPretty) {
+          tr.innerHTML = `<td class="time-cell">${entry.timeLabel}</td><td class="method-cell">${escapeHtml(entry.method)}</td><td class="path-cell" title="${escapeHtml(entry.path)}">${escapeHtml(entry.path)}</td><td class="status-cell">${escapeHtml(entry.status)}</td><td class="summary-cell">${escapeHtml(entry.summary)}</td>`;
+        } else {
+          const oneLine = `${entry.timeLabel} | ${entry.method} ${entry.path} | ${entry.status} | ${toSingleLine(entry.summary)}`;
+          tr.innerHTML = `<td colspan="5" class="api-log-one-line" title="${escapeHtml(oneLine)}">${escapeHtml(oneLine)}</td>`;
+        }
+        tbody.appendChild(tr);
+      });
     }
 
     function escapeHtml(v) {
@@ -2742,6 +2807,8 @@
       document.getElementById("baseUrlLabel").textContent = apiBaseUrl;
       initCustomTooltips();
       initPreviewPanHandlers();
+      updateDebugToggleButton();
+      renderApiLogs();
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           closeSatelliteEditModal();
