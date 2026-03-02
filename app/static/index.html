@@ -342,6 +342,24 @@
       font-size: 12px; background: #fff;
     }
     .step.current { border-color: var(--primary); color: var(--primary); font-weight: 700; }
+    .state-flash {
+      color: var(--fail);
+      font-weight: 700;
+      animation: stateFlashFade 1.1s ease-out 1;
+    }
+    .step.current.state-flash {
+      border-color: var(--fail);
+      color: var(--fail);
+      animation: stepFlashFade 1.1s ease-out 1;
+    }
+    @keyframes stateFlashFade {
+      0% { color: var(--fail); background: #ffecef; }
+      100% { color: inherit; background: transparent; }
+    }
+    @keyframes stepFlashFade {
+      0% { border-color: var(--fail); color: var(--fail); background: #ffecef; }
+      100% { border-color: var(--primary); color: var(--primary); background: #fff; }
+    }
     pre {
       margin: 0;
       background: #121821;
@@ -425,6 +443,14 @@
         <div class="card">
           <h3>Command State Distribution</h3>
           <div id="stateDist" class="muted">No command data.</div>
+        </div>
+        <div class="card">
+          <h3>Completed Image Links</h3>
+          <div id="completedLinksSummaryDashboard" class="muted">No command data.</div>
+          <table>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th></tr></thead>
+            <tbody id="completedLinksBodyDashboard"></tbody>
+          </table>
         </div>
         <div class="card">
           <h3>Korean Satellite Seed Summary</h3>
@@ -626,7 +652,7 @@
         <div class="card">
           <h3>Completed Image Links</h3>
           <table>
-            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
             <tbody id="completedLinksBody"></tbody>
           </table>
         </div>
@@ -779,6 +805,7 @@
     const groundStationsById = new Map();
     const requestorsById = new Map();
     const requestorsByStationId = new Map();
+    const lastRenderedStateByCommand = new Map();
     let MOCK_USERS = [
       { user_id: "admin-001", name: "Admin Alice", role: "admin" },
       { user_id: "operator-001", name: "Operator Owen", role: "operator" },
@@ -1984,15 +2011,20 @@
       return payload;
     }
 
-    function renderTimeline(state) {
+    function renderTimeline(state, flashCurrent = false) {
       const el = document.getElementById("timeline");
-      el.innerHTML = STATE_ORDER.map((s) => `<span class="step ${state === s ? "current" : ""}">${s}</span>`).join("");
+      el.innerHTML = STATE_ORDER.map((s) => {
+        const isCurrent = state === s;
+        const cls = isCurrent ? "step current" : "step";
+        return `<span class="${cls}">${s}</span>`;
+      }).join("");
     }
 
     async function fetchCommand(fromFollow = false) {
       const id = document.getElementById("commandIdInput").value.trim();
       if (!id) return;
       currentCommandId = id;
+      const prevState = allCommands.get(id)?.state || "";
       const { response, payload } = await api(`/commands/${id}`);
       if (!response.ok) {
         document.getElementById("commandMeta").textContent = `Error: ${JSON.stringify(payload)}`;
@@ -2014,8 +2046,10 @@
         return null;
       }
       allCommands.set(id, payload);
-      renderTimeline(payload.state);
-      document.getElementById("commandMeta").innerHTML = `State: <b>${payload.state}</b> | Message: ${escapeHtml(payload.message || "-")}`;
+      const stateChanged = !!prevState && prevState !== payload.state;
+      renderTimeline(payload.state, stateChanged);
+      document.getElementById("commandMeta").innerHTML =
+        `State: <b class="${stateChanged ? "state-flash" : ""}">${escapeHtml(payload.state)}</b> | Message: ${escapeHtml(payload.message || "-")}`;
       document.getElementById("commandJson").textContent = JSON.stringify({
         acquisition_metadata: payload.acquisition_metadata,
         product_metadata: payload.product_metadata,
@@ -2046,6 +2080,7 @@
     async function retryFailedCommand() {
       const id = document.getElementById("commandIdInput").value.trim();
       if (!id) return;
+      const prevState = allCommands.get(id)?.state || "";
       const { response, payload } = await api(`/commands/${id}/rerun`, { method: "POST" });
       if (!response.ok) {
         document.getElementById("commandMeta").textContent = `Retry failed: ${JSON.stringify(payload)}`;
@@ -2053,8 +2088,10 @@
       }
       currentCommandId = id;
       allCommands.set(id, payload);
-      renderTimeline(payload.state);
-      document.getElementById("commandMeta").innerHTML = `State: <b>${payload.state}</b> | Message: ${escapeHtml(payload.message || "-")}`;
+      const stateChanged = !!prevState && prevState !== payload.state;
+      renderTimeline(payload.state, stateChanged);
+      document.getElementById("commandMeta").innerHTML =
+        `State: <b class="${stateChanged ? "state-flash" : ""}">${escapeHtml(payload.state)}</b> | Message: ${escapeHtml(payload.message || "-")}`;
       document.getElementById("commandJson").textContent = JSON.stringify({
         acquisition_metadata: payload.acquisition_metadata,
         product_metadata: payload.product_metadata,
@@ -2111,12 +2148,13 @@
       renderSatelliteReport(satInfo.rows, commands);
     }
 
-    function renderCompletedLinks() {
-      const body = document.getElementById("completedLinksBody");
-      const rows = Array.from(allCommands.values())
-        .filter((cmd) => canViewCommand(cmd))
-        .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
-
+    function renderCompletedLinksRows(body, rows, stateChangedByCommand = new Map(), opts = {}) {
+      const showSelect = opts.showSelect !== false;
+      if (!body) return;
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="${showSelect ? 8 : 7}" class="muted">No command data.</td></tr>`;
+        return;
+      }
       body.innerHTML = rows.map((cmd) => {
         let link = `<span class="muted">Not Ready</span>`;
         if (cmd.state === "FAILED") {
@@ -2128,8 +2166,46 @@
         const selectAction = `<a href="#" class="action-link" onclick="selectCommandForMonitor('${cmd.command_id}'); return false;">Select</a>`;
         const imageCreatedAt = cmd.acquisition_metadata?.captured_at || cmd.updated_at || "-";
         const satName = satelliteNameById.get(cmd.satellite_id) || cmd.satellite_id;
-        return `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${cmd.state}</td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`;
+        const stationLabel = cmd.ground_station_name || cmd.ground_station_id || "(none)";
+        const requestorId = cmd.requestor_id || "(none)";
+        const stateClass = stateChangedByCommand.get(cmd.command_id) ? "state-flash" : "";
+        return showSelect
+          ? `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`
+          : `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td></tr>`;
       }).join("");
+    }
+
+    function renderCompletedLinks() {
+      const rows = Array.from(allCommands.values())
+        .filter((cmd) => canViewCommand(cmd))
+        .sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+
+      const stateChangedByCommand = new Map();
+      for (const cmd of rows) {
+        const prevState = lastRenderedStateByCommand.get(cmd.command_id);
+        const isChanged = !!prevState && prevState !== cmd.state;
+        stateChangedByCommand.set(cmd.command_id, isChanged);
+      }
+
+      renderCompletedLinksRows(document.getElementById("completedLinksBody"), rows, stateChangedByCommand, { showSelect: true });
+      renderCompletedLinksRows(
+        document.getElementById("completedLinksBodyDashboard"),
+        rows,
+        stateChangedByCommand,
+        { showSelect: false },
+      );
+
+      for (const cmd of rows) {
+        lastRenderedStateByCommand.set(cmd.command_id, cmd.state);
+      }
+
+      const summary = document.getElementById("completedLinksSummaryDashboard");
+      if (summary) {
+        const ready = rows.filter((cmd) => cmd.state === "DOWNLINK_READY" && !!cmd.download_url).length;
+        const failed = rows.filter((cmd) => cmd.state === "FAILED").length;
+        const inProgress = rows.filter((cmd) => ["QUEUED", "ACKED", "CAPTURING"].includes(cmd.state)).length;
+        summary.textContent = `Total ${rows.length} commands | Downlink Ready ${ready} | Failed ${failed} | In Progress ${inProgress}`;
+      }
     }
 
     function renderSatelliteReport(satRows, commandRows) {
