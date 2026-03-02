@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>K-Sattie Sky Hub (uplink수신-> 위성촬영 -> downlink전송)</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7611240025188124"
+       crossorigin="anonymous"></script>
   <style>
     :root {
       --bg: #f2f4f8;
@@ -37,6 +39,7 @@
       flex-wrap: wrap;
     }
     .title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .title-link { cursor: pointer; display: inline-block; }
     .title-note {
       display: inline;
       margin-left: 6px;
@@ -502,7 +505,13 @@
 <body>
   <header>
     <div>
-      <div class="title">K-Sattie Sky Hub <span class="title-note">(uplink수신-> 위성촬영 -> downlink전송)</span></div>
+      <div
+        class="title title-link"
+        role="button"
+        tabindex="0"
+        onclick="openTabById('dashboard')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTabById('dashboard');}"
+      >K-Sattie Sky Hub <span class="title-note">(uplink수신-> 위성촬영 -> downlink전송)</span></div>
       <div class="subtitle">API Base URL: <span id="baseUrlLabel">http://localhost:6005</span></div>
       <div id="authNotice" class="role-note"></div>
     </div>
@@ -525,7 +534,7 @@
       <button class="tab-btn" data-tab="reports" onclick="showTab('reports', this)" title="위성별 촬영 성능 통계 리포트를 확인합니다.">Satellites Performance</button>
       <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">Commands Monitor</button>
       <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">Send 1 Uplink Scenario</button>
-      <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">Multi API Scenario</button>
+      <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">Multi Payload Scenario</button>
     </nav>
 
     <main>
@@ -725,7 +734,7 @@
           </div>
           <div class="uplink-preview-shell">
           <div class="uplink-preview-section">
-            <div class="uplink-preview-title">위성사진생성 시뮬레이션 옵션(선택)</div>
+            <div class="uplink-preview-title">위성사진(downlink)생성 시뮬레이션 옵션(선택)</div>
             <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
               <label class="gen-choice" title="현재 방식. 서버 내부 로직으로 샘플 이미지 생성">
                 <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" checked onchange="setGenerationMode('INTERNAL')" />
@@ -817,7 +826,7 @@
 
       <section id="scenarios" class="tab">
         <div class="card">
-          <h2>Multi API Scenario Runner</h2>
+          <h2>Multi Payload Scenario Runner</h2>
           <div class="row">
             <button onclick="runScenario('SCN-001')">SCN-001 Normal EO</button>
             <button onclick="runScenario('SCN-002')">SCN-002 Normal SAR</button>
