@@ -455,7 +455,7 @@
   <div class="layout">
     <nav>
       <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard', this)" title="Sky Hub 주요 현황과 KPI를 확인합니다.">Dashboard</button>
-      <button class="tab-btn" data-tab="satellites" data-role-allow="admin" onclick="showTab('satellites', this)" title="위성/지상국 정보를 생성·수정·삭제하고 시드 데이터를 설정합니다.">Satellites Status</button>
+      <button class="tab-btn" data-tab="satellites" data-role-allow="admin" onclick="showTab('satellites', this)" title="위성/지상국 정보를 생성·수정·삭제하고 시드 데이터를 설정합니다.">Satellites</button>
       <button class="tab-btn" data-tab="reports" onclick="showTab('reports', this)" title="위성별 촬영 성능 통계 리포트를 확인합니다.">Satellites Performance</button>
       <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">Commands Status</button>
       <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">Send 1 Uplink Scenario</button>
@@ -643,7 +643,7 @@
           </div>
           <div class="uplink-preview-shell">
           <div class="uplink-preview-section">
-            <div class="uplink-preview-title">위성사진생성시뮬레이션 옵션(선택)</div>
+            <div class="uplink-preview-title">위성사진생성 시뮬레이션 옵션(선택)</div>
             <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
               <label class="gen-choice" title="현재 방식. 서버 내부 로직으로 샘플 이미지 생성">
                 <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" checked onchange="setGenerationMode('INTERNAL')" />
