@@ -150,6 +150,22 @@
     .action-link.delete {
       color: var(--fail);
     }
+    .action-disabled {
+      color: #7b8797;
+      background: #eef2f6;
+      border: 1px solid #d3dbe6;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .disabled-control {
+      opacity: 1;
+      color: #6d7888 !important;
+      border-color: #d3dbe6 !important;
+      background: #eef2f6 !important;
+      cursor: not-allowed;
+    }
     .gen-choice {
       display: inline-flex;
       align-items: center;
@@ -223,6 +239,28 @@
     }
     .uplink-preview-section #previewImage {
       border: 1px dashed #8cc9a5 !important;
+    }
+    .uplink-form-shell {
+      margin-top: 8px;
+      padding: 12px;
+      border: 2px solid #c7d4e4;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f4f8fd 100%);
+    }
+    .uplink-form-shell .row:last-of-type {
+      margin-bottom: 0;
+    }
+    .uplink-preview-shell {
+      margin-top: 10px;
+      padding: 12px;
+      border: 2px solid #c8dbc9;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fbfefb 0%, #f2faf2 100%);
+    }
+    .uplink-preview-shell .uplink-preview-section {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
     }
     .modal-backdrop {
       position: fixed;
@@ -448,7 +486,7 @@
           <h3>Completed Image Links</h3>
           <div id="completedLinksSummaryDashboard" class="muted">No command data.</div>
           <table>
-            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th></tr></thead>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th></tr></thead>
             <tbody id="completedLinksBodyDashboard"></tbody>
           </table>
         </div>
@@ -462,10 +500,11 @@
       <section id="satellites" class="tab">
         <div class="card">
           <h2>Satellites Configuration</h2>
+          <div id="satellitesAccessNote" class="muted"></div>
           <div class="row">
-            <button class="btn-primary" onclick="seedSatellites()" title="한국 위성 기반 초기 Mock 위성 데이터를 생성합니다. 이미 존재하는 동일 이름 위성은 중복 생성하지 않습니다.">Setup Initial Mock Satellites</button>
-            <button class="btn-primary" onclick="seedGroundStations()" title="업링크 요청 주체로 사용할 가상 지상국 데이터를 생성합니다.">Setup Initial Mock Ground Stations</button>
-            <button class="btn-primary" onclick="seedRequestors()" title="지상국별 초기 Mock 요청자(requestor) 데이터를 생성합니다.">Setup Initial Mock Requestors</button>
+            <button class="btn-primary" data-manage-control="infra" onclick="seedSatellites()" title="한국 위성 기반 초기 Mock 위성 데이터를 생성합니다. 이미 존재하는 동일 이름 위성은 중복 생성하지 않습니다.">Setup Initial Mock Satellites</button>
+            <button class="btn-primary" data-manage-control="infra" onclick="seedGroundStations()" title="업링크 요청 주체로 사용할 가상 지상국 데이터를 생성합니다.">Setup Initial Mock Ground Stations</button>
+            <button class="btn-primary" data-manage-control="infra" onclick="seedRequestors()" title="지상국별 초기 Mock 요청자(requestor) 데이터를 생성합니다.">Setup Initial Mock Requestors</button>
             <button onclick="loadSatelliteTypes()">Show Satellite Types</button>
           </div>
         </div>
@@ -474,10 +513,10 @@
           <div class="card">
             <h3>Create Satellite</h3>
             <div class="row">
-              <input id="newSatName" placeholder="name" value="manual-sat" />
-              <select id="newSatType"><option>EO_OPTICAL</option><option>SAR</option></select>
-              <select id="newSatStatus"><option>AVAILABLE</option><option>MAINTENANCE</option></select>
-              <button class="btn-primary" onclick="createSatellite()">Create</button>
+              <input id="newSatName" data-manage-control="infra" placeholder="name" value="manual-sat" />
+              <select id="newSatType" data-manage-control="infra"><option>EO_OPTICAL</option><option>SAR</option></select>
+              <select id="newSatStatus" data-manage-control="infra"><option>AVAILABLE</option><option>MAINTENANCE</option></select>
+              <button class="btn-primary" data-manage-control="infra" onclick="createSatellite()">Create</button>
             </div>
           </div>
           <div class="card">
@@ -494,16 +533,16 @@
           <div class="card">
             <h3>Create Ground Station</h3>
             <div class="row">
-              <input id="newGroundStationName" placeholder="name" value="manual-gs" />
-              <select id="newGroundStationType">
+              <input id="newGroundStationName" data-manage-control="infra" placeholder="name" value="manual-gs" />
+              <select id="newGroundStationType" data-manage-control="infra">
                 <option>FIXED</option>
                 <option>LAND_MOBILE</option>
                 <option>MARITIME</option>
                 <option>AIRBORNE</option>
               </select>
-              <select id="newGroundStationStatus"><option>OPERATIONAL</option><option>MAINTENANCE</option></select>
-              <input id="newGroundStationLocation" placeholder="location (optional)" value="" />
-              <button class="btn-primary" onclick="createGroundStation()">Create</button>
+              <select id="newGroundStationStatus" data-manage-control="infra"><option>OPERATIONAL</option><option>MAINTENANCE</option></select>
+              <input id="newGroundStationLocation" data-manage-control="infra" placeholder="location (optional)" value="" />
+              <button class="btn-primary" data-manage-control="infra" onclick="createGroundStation()">Create</button>
             </div>
           </div>
           <div class="card">
@@ -520,9 +559,9 @@
           <div class="card">
             <h3>Create Requestor</h3>
             <div class="row">
-              <input id="newRequestorName" placeholder="name" value="manual-requestor" />
-              <select id="newRequestorGroundStationId" class="uplink-num" title="소속 지상국 선택"></select>
-              <button class="btn-primary" onclick="createRequestor()">Create</button>
+              <input id="newRequestorName" data-manage-control="infra" placeholder="name" value="manual-requestor" />
+              <select id="newRequestorGroundStationId" data-manage-control="infra" class="uplink-num" title="소속 지상국 선택"></select>
+              <button class="btn-primary" data-manage-control="infra" onclick="createRequestor()">Create</button>
             </div>
           </div>
           <div class="card">
@@ -538,6 +577,7 @@
       <section id="uplink" class="tab">
         <div class="card">
           <h2>Send Uplink Command</h2>
+          <div class="uplink-form-shell">
           <div class="row">
             <select id="uplinkSatId" onchange="onUplinkSatelliteChanged()" title="촬영 명령을 보낼 대상 위성 선택"></select>
             <select id="uplinkGroundStationId" class="uplink-num" title="업링크 요청 지상국 선택" onchange="onUplinkGroundStationChanged()">
@@ -600,6 +640,8 @@
           <div class="row">
             <button class="send-uplink-btn" onclick="sendUplink()" title="입력값으로 업링크 명령 전송">Send Uplink</button>
           </div>
+          </div>
+          <div class="uplink-preview-shell">
           <div class="uplink-preview-section">
             <div class="uplink-preview-title">위성사진생성시뮬레이션 옵션(선택)</div>
             <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
@@ -627,6 +669,7 @@
               <img id="previewImage" alt="map preview" style="display:none; margin-top:8px; width:100%; max-height:340px; object-fit:contain; border:1px solid var(--line); border-radius:8px; background:#f8fafc;" />
             </div>
           </div>
+          </div>
           <pre id="uplinkResult">No uplink submitted.</pre>
         </div>
       </section>
@@ -652,7 +695,7 @@
         <div class="card">
           <h3>Completed Image Links</h3>
           <table>
-            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
             <tbody id="completedLinksBody"></tbody>
           </table>
         </div>
@@ -745,7 +788,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" onclick="closeSatelliteEditModal()">Cancel</button>
-        <button type="button" class="btn-primary" onclick="updateSatellite()">Save</button>
+        <button type="button" class="btn-primary" data-manage-control="infra" onclick="updateSatellite()">Save</button>
       </div>
     </div>
   </div>
@@ -776,7 +819,7 @@
       </div>
       <div class="modal-actions">
         <button type="button" onclick="closeGroundStationEditModal()">Cancel</button>
-        <button type="button" class="btn-primary" onclick="updateGroundStation()">Save</button>
+        <button type="button" class="btn-primary" data-manage-control="infra" onclick="updateGroundStation()">Save</button>
       </div>
     </div>
   </div>
@@ -819,10 +862,10 @@
     function hasTabAccess(tabId) {
       if (currentUser.role === "admin") return true;
       if (currentUser.role === "operator") {
-        return tabId !== "satellites";
+        return true;
       }
       if (currentUser.role === "requestor") {
-        return ["dashboard", "reports", "commands"].includes(tabId);
+        return tabId === "dashboard";
       }
       return false;
     }
@@ -871,6 +914,23 @@
       if (activeTab && !hasTabAccess(activeTab.id)) {
         openTabById("dashboard");
       }
+      applySatellitesManageControl();
+    }
+
+    function applySatellitesManageControl() {
+      const disabled = !canManageInfra();
+      const note = document.getElementById("satellitesAccessNote");
+      if (note) {
+        note.textContent = disabled
+          ? "Operator 모드: Satellites Status 조회만 가능하며 입력/생성/수정/삭제 기능은 비활성화됩니다."
+          : "";
+      }
+      document.querySelectorAll('[data-manage-control="infra"]').forEach((el) => {
+        if ("disabled" in el) {
+          el.disabled = disabled;
+        }
+        el.classList.toggle("disabled-control", disabled);
+      });
     }
 
     function initMockUsers() {
@@ -905,6 +965,10 @@
         closeSatelliteEditModal();
         closeGroundStationEditModal();
       }
+      // Re-render role-sensitive tables/actions immediately after role switch.
+      await listSatellites();
+      await listGroundStations();
+      await listRequestors();
       await refreshDashboard();
       if (document.getElementById("commands").classList.contains("active")) {
         await fetchCommand(true);
@@ -926,8 +990,8 @@
 
     const UPLINK_PRESETS_BY_SEED_NAME = {
       "KOMPSAT-3 (Arirang-3)": {
-        mission_name: "precision-urban-mapping",
-        aoi_name: "seoul-central",
+        mission_name: "도심 정밀 지도화",
+        aoi_name: "서울 도심권",
         aoi_center_lat: 37.5665,
         aoi_center_lon: 126.9780,
         aoi_bbox: [126.88, 37.48, 127.08, 37.66],
@@ -949,8 +1013,8 @@
         fail_probability: 0.05,
       },
       "KOMPSAT-3A (Arirang-3A)": {
-        mission_name: "night-thermal-watch",
-        aoi_name: "ulsan-industrial-zone",
+        mission_name: "야간 열 이상 감시",
+        aoi_name: "울산 산업단지",
         aoi_center_lat: 35.5384,
         aoi_center_lon: 129.3114,
         aoi_bbox: [129.16, 35.45, 129.46, 35.63],
@@ -972,8 +1036,8 @@
         fail_probability: 0.05,
       },
       "CAS500-1 (NextSat-1)": {
-        mission_name: "agri-monitoring",
-        aoi_name: "jeolla-farmland",
+        mission_name: "농업 생육 모니터링",
+        aoi_name: "전라 농경지",
         aoi_center_lat: 35.1,
         aoi_center_lon: 126.9,
         aoi_bbox: [126.6, 34.85, 127.2, 35.35],
@@ -995,8 +1059,8 @@
         fail_probability: 0.05,
       },
       "Cheollian-2B (GEO-KOMPSAT-2B)": {
-        mission_name: "ocean-color-monitoring",
-        aoi_name: "yellow-sea-west-korea",
+        mission_name: "해양 색상 관측",
+        aoi_name: "서해 한국 연안",
         aoi_center_lat: 35.2,
         aoi_center_lon: 124.8,
         aoi_bbox: [123.8, 34.2, 125.8, 36.2],
@@ -1018,8 +1082,8 @@
         fail_probability: 0.06,
       },
       "KOMPSAT-5 (Arirang-5, SAR)": {
-        mission_name: "all-weather-port-watch",
-        aoi_name: "busan-port",
+        mission_name: "전천후 항만 감시",
+        aoi_name: "부산항",
         aoi_center_lat: 35.1028,
         aoi_center_lon: 129.0403,
         aoi_bbox: [128.92, 35.0, 129.16, 35.2],
@@ -1041,8 +1105,8 @@
         fail_probability: 0.04,
       },
       "KOMPSAT-6 (Arirang-6, SAR)": {
-        mission_name: "disaster-rapid-response",
-        aoi_name: "gangwon-landslide-risk",
+        mission_name: "재난 신속 대응",
+        aoi_name: "강원 산사태 위험지역",
         aoi_center_lat: 37.82,
         aoi_center_lon: 128.2,
         aoi_bbox: [127.85, 37.55, 128.55, 38.1],
@@ -1064,8 +1128,8 @@
         fail_probability: 0.04,
       },
       "KOMPSAT-Next-5 (C-band SAR)": {
-        mission_name: "maritime-domain-awareness",
-        aoi_name: "korea-strait",
+        mission_name: "해양 상황 인지",
+        aoi_name: "대한해협",
         aoi_center_lat: 34.5,
         aoi_center_lon: 128.7,
         aoi_bbox: [127.9, 34.0, 129.5, 35.1],
@@ -1091,8 +1155,8 @@
     function getTypeFallbackPreset(satType) {
       if (satType === "SAR") {
         return {
-          mission_name: "sar-tasking",
-          aoi_name: "default-sar-aoi",
+          mission_name: "SAR 촬영 임무",
+          aoi_name: "기본 SAR 촬영지역",
           aoi_center_lat: "",
           aoi_center_lon: "",
           aoi_bbox: "",
@@ -1115,8 +1179,8 @@
         };
       }
       return {
-        mission_name: "eo-tasking",
-        aoi_name: "default-eo-aoi",
+        mission_name: "EO 촬영 임무",
+        aoi_name: "기본 EO 촬영지역",
         aoi_center_lat: "",
         aoi_center_lon: "",
         aoi_bbox: "",
@@ -1581,6 +1645,7 @@
     }
 
     async function createSatellite() {
+      if (!canManageInfra()) return;
       const body = {
         name: document.getElementById("newSatName").value,
         type: document.getElementById("newSatType").value,
@@ -1599,6 +1664,7 @@
     }
 
     async function createGroundStation() {
+      if (!canManageInfra()) return;
       const body = {
         name: document.getElementById("newGroundStationName").value,
         type: document.getElementById("newGroundStationType").value,
@@ -1618,6 +1684,7 @@
     }
 
     async function createRequestor() {
+      if (!canManageInfra()) return;
       const body = {
         name: document.getElementById("newRequestorName").value,
         ground_station_id: document.getElementById("newRequestorGroundStationId").value,
@@ -1651,8 +1718,10 @@
           <td><span class="${sat.status === "AVAILABLE" ? "ok" : "fail"}">${sat.status}</span></td>
           <td>${sat.profile.orbit_type}, ${sat.profile.default_product_type}</td>
           <td>
-            <a href="#" class="action-link" onclick="startEditSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}','${sat.status}'); return false;">Edit</a>
-            <a href="#" class="action-link delete" onclick="deleteSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}'); return false;">Delete</a>
+            ${canManageInfra()
+              ? `<a href="#" class="action-link" onclick="startEditSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}','${sat.status}'); return false;">Edit</a>
+                 <a href="#" class="action-link delete" onclick="deleteSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}'); return false;">Delete</a>`
+              : `<span class="action-disabled">Disabled</span>`}
           </td>
         </tr>
       `).join("");
@@ -1685,8 +1754,10 @@
             <td><span class="${station.status === "OPERATIONAL" ? "ok" : "fail"}">${station.status}</span></td>
             <td>${station.location || "-"}</td>
             <td>
-              <a href="#" class="action-link" onclick="startEditGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}','${station.type}','${station.status}','${escapeHtml(station.location || "")}'); return false;">Edit</a>
-              <a href="#" class="action-link delete" onclick="deleteGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}'); return false;">Delete</a>
+              ${canManageInfra()
+                ? `<a href="#" class="action-link" onclick="startEditGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}','${station.type}','${station.status}','${escapeHtml(station.location || "")}'); return false;">Edit</a>
+                   <a href="#" class="action-link delete" onclick="deleteGroundStation('${station.ground_station_id}','${escapeHtml(station.name)}'); return false;">Delete</a>`
+                : `<span class="action-disabled">Disabled</span>`}
             </td>
           </tr>
         `).join("");
@@ -1736,8 +1807,10 @@
             <td>${requestor.name}</td>
             <td>${requestor.ground_station_name || requestor.ground_station_id}</td>
             <td>
-              <a href="#" class="action-link" onclick="editRequestor('${requestor.requestor_id}'); return false;">Edit</a>
-              <a href="#" class="action-link delete" onclick="deleteRequestor('${requestor.requestor_id}','${escapeHtml(requestor.name)}'); return false;">Delete</a>
+              ${canManageInfra()
+                ? `<a href="#" class="action-link" onclick="editRequestor('${requestor.requestor_id}'); return false;">Edit</a>
+                   <a href="#" class="action-link delete" onclick="deleteRequestor('${requestor.requestor_id}','${escapeHtml(requestor.name)}'); return false;">Delete</a>`
+                : `<span class="action-disabled">Disabled</span>`}
             </td>
           </tr>
         `).join("");
@@ -1748,6 +1821,7 @@
     }
 
     async function deleteRequestor(requestorId, name) {
+      if (!canManageInfra()) return;
       const ok = window.confirm(`Delete requestor '${name}' (${requestorId})?`);
       if (!ok) return;
       const { response } = await api(`/requestors/${requestorId}`, { method: "DELETE" });
@@ -1758,6 +1832,7 @@
     }
 
     async function editRequestor(requestorId) {
+      if (!canManageInfra()) return;
       const current = requestorsById.get(requestorId);
       if (!current) {
         document.getElementById("healthResult").textContent = `Requestor not found: ${requestorId}`;
@@ -1799,6 +1874,7 @@
     }
 
     function startEditGroundStation(groundStationId, name, type, status, location) {
+      if (!canManageInfra()) return;
       editingGroundStationId = groundStationId;
       document.getElementById("modalEditGsName").value = name;
       document.getElementById("modalEditGsType").value = type;
@@ -1824,6 +1900,7 @@
     }
 
     async function updateGroundStation() {
+      if (!canManageInfra()) return;
       if (!editingGroundStationId) return;
       const body = {
         name: document.getElementById("modalEditGsName").value,
@@ -1845,6 +1922,7 @@
     }
 
     async function deleteGroundStation(groundStationId, name) {
+      if (!canManageInfra()) return;
       const ok = window.confirm(`Delete ground station '${name}' (${groundStationId})?`);
       if (!ok) return;
       const { response } = await api(`/ground-stations/${groundStationId}`, { method: "DELETE" });
@@ -1859,6 +1937,7 @@
     }
 
     function startEditSatellite(satelliteId, name, status) {
+      if (!canManageInfra()) return;
       editingSatelliteId = satelliteId;
       document.getElementById("modalEditSatName").value = name;
       document.getElementById("modalEditSatStatus").value = status;
@@ -1880,6 +1959,7 @@
     }
 
     async function updateSatellite() {
+      if (!canManageInfra()) return;
       if (!editingSatelliteId) return;
       const body = {
         name: document.getElementById("modalEditSatName").value,
@@ -1901,6 +1981,7 @@
     }
 
     async function deleteSatellite(satelliteId, name) {
+      if (!canManageInfra()) return;
       const ok = window.confirm(`Delete satellite '${name}' (${satelliteId})?`);
       if (!ok) return;
       const { response } = await api(`/satellites/${satelliteId}`, { method: "DELETE" });
@@ -1961,8 +2042,8 @@
         satellite_id: document.getElementById("uplinkSatId").value,
         ground_station_id: selectedGroundStationId || null,
         requestor_id: selectedRequestorId || null,
-        mission_name: missionInput || "mission-demo",
-        aoi_name: aoiInput || "default-aoi",
+        mission_name: missionInput || "시연 임무",
+        aoi_name: aoiInput || "기본 촬영지역",
         aoi_center_lat: lat,
         aoi_center_lon: lon,
         aoi_bbox: parseBbox(document.getElementById("aoiBbox").value),
@@ -2152,7 +2233,7 @@
       const showSelect = opts.showSelect !== false;
       if (!body) return;
       if (!rows.length) {
-        body.innerHTML = `<tr><td colspan="${showSelect ? 8 : 7}" class="muted">No command data.</td></tr>`;
+        body.innerHTML = `<tr><td colspan="${showSelect ? 10 : 9}" class="muted">No command data.</td></tr>`;
         return;
       }
       body.innerHTML = rows.map((cmd) => {
@@ -2166,12 +2247,14 @@
         const selectAction = `<a href="#" class="action-link" onclick="selectCommandForMonitor('${cmd.command_id}'); return false;">Select</a>`;
         const imageCreatedAt = cmd.acquisition_metadata?.captured_at || cmd.updated_at || "-";
         const satName = satelliteNameById.get(cmd.satellite_id) || cmd.satellite_id;
+        const missionName = cmd.mission_name || "(none)";
+        const aoiName = cmd.aoi_name || "(none)";
         const stationLabel = cmd.ground_station_name || cmd.ground_station_id || "(none)";
         const requestorId = cmd.requestor_id || "(none)";
         const stateClass = stateChangedByCommand.get(cmd.command_id) ? "state-flash" : "";
         return showSelect
-          ? `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`
-          : `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td></tr>`;
+          ? `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`
+          : `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td></tr>`;
       }).join("");
     }
 
