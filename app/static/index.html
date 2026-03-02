@@ -440,6 +440,18 @@
       flex: 1;
       min-height: 0;
     }
+    .site-footer {
+      border-top: 1px solid var(--line);
+      background: #ffffff;
+      padding: 10px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+    .site-footer strong {
+      color: var(--text);
+      font-weight: 600;
+    }
     .log-scroll {
       min-height: 460px;
       flex: 1;
@@ -861,6 +873,14 @@
       </div>
     </main>
   </div>
+
+  <footer class="site-footer">
+    Copyright © 2026
+    <strong>K-Sattie Sky Hub</strong>,
+    <strong>K-Sattie Ground Tasking</strong>,
+    <strong>K-Sattie DP/DA system</strong>.
+    All rights reserved.
+  </footer>
 
   <div id="satEditModalBackdrop" class="modal-backdrop" onclick="closeSatelliteEditModal(event)">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="satEditModalTitle">
@@ -1482,7 +1502,7 @@
       const timeLabel = `${mm}/${dd} ${hh}:${mi}:${ss}`;
       tr.innerHTML = `<td class="time-cell">${timeLabel}</td><td class="method-cell">${method}</td><td class="path-cell" title="${escapeHtml(path)}">${escapeHtml(path)}</td><td class="status-cell">${status}</td><td class="summary-cell">${escapeHtml(summary)}</td>`;
       tbody.prepend(tr);
-      while (tbody.children.length > 300) tbody.removeChild(tbody.lastChild);
+      while (tbody.children.length > 100) tbody.removeChild(tbody.lastChild);
     }
 
     function escapeHtml(v) {
