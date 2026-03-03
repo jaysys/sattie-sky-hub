@@ -307,6 +307,15 @@ class ClearImagesResponse(BaseModel):
     message: str
 
 
+class ApiCallLogEntryResponse(BaseModel):
+    time: str
+    method: str
+    path: str
+    status: int
+    summary: str
+    client_ip: str
+
+
 @dataclass
 class Satellite:
     satellite_id: str
@@ -378,6 +387,9 @@ commands: dict[str, Command] = {}
 store_lock = threading.Lock()
 rate_lock = threading.Lock()
 rate_buckets: dict[str, deque[float]] = defaultdict(deque)
+api_logs_lock = threading.Lock()
+api_call_logs: deque[dict[str, Any]] = deque()
+API_LOG_LIMIT = int(os.getenv("SATTI_API_LOG_LIMIT", "1000"))
 
 API_KEY_HEADER = "x-api-key"
 API_KEY = os.getenv("SATTI_API_KEY", "change-me")
@@ -432,6 +444,28 @@ SATELLITE_TYPE_PROFILES: dict[SatelliteType, SatelliteTypeProfile] = {
 @app.middleware("http")
 async def auth_and_rate_limit(request: Request, call_next):
     path = request.url.path
+    path_with_query = str(request.url.path)
+    if request.url.query:
+        path_with_query = f"{path_with_query}?{request.url.query}"
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "")
+
+    def append_api_call(status: int, summary: str) -> None:
+        if path.startswith("/static") or path == "/monitor/api-calls":
+            return
+        entry = {
+            "time": now_iso(datetime.now(UTC)),
+            "method": request.method,
+            "path": path_with_query,
+            "status": status,
+            "summary": summary,
+            "client_ip": client_ip,
+        }
+        with api_logs_lock:
+            api_call_logs.appendleft(entry)
+            while len(api_call_logs) > API_LOG_LIMIT:
+                api_call_logs.pop()
+
     if request.method == "OPTIONS":
         return await call_next(request)
 
@@ -443,22 +477,28 @@ async def auth_and_rate_limit(request: Request, call_next):
         if path.startswith("/downloads/") and not api_key:
             api_key = request.query_params.get("api_key", "")
         if api_key != API_KEY:
+            append_api_call(401, "Unauthorized")
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
 
     # Simple fixed-window-ish limiter per client IP.
     # Set SATTI_RATE_LIMIT_PER_MIN<=0 to disable the limiter.
     if RATE_LIMIT_PER_MIN > 0:
-        client_ip = request.client.host if request.client else "unknown"
         now_ts = time.time()
         with rate_lock:
             bucket = rate_buckets[client_ip]
             while bucket and now_ts - bucket[0] > 60:
                 bucket.popleft()
             if len(bucket) >= RATE_LIMIT_PER_MIN:
+                append_api_call(429, "Too Many Requests")
                 return JSONResponse(status_code=429, content={"detail": "Too Many Requests"})
             bucket.append(now_ts)
-
-    return await call_next(request)
+    try:
+        response = await call_next(request)
+    except Exception:
+        append_api_call(500, f"Unhandled Error | UA: {user_agent[:120]}")
+        raise
+    append_api_call(response.status_code, f"OK | UA: {user_agent[:120]}")
+    return response
 
 
 def seed_default_satellites_locked() -> list[str]:
@@ -919,6 +959,13 @@ def ensure_generation_profile_for_rerun(command: Command) -> None:
 @app.get("/health")
 def health() -> dict[Literal["status"], str]:
     return {"status": "ok"}
+
+
+@app.get("/monitor/api-calls", response_model=list[ApiCallLogEntryResponse])
+def get_api_call_logs(limit: int = Query(default=100, ge=1, le=500)) -> list[ApiCallLogEntryResponse]:
+    with api_logs_lock:
+        rows = list(api_call_logs)[:limit]
+    return [ApiCallLogEntryResponse(**row) for row in rows]
 
 
 @app.get("/", include_in_schema=False)

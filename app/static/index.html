@@ -7,6 +7,9 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7611240025188124"
        crossorigin="anonymous"></script>
   <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap");
+
     :root {
       --bg: #f2f4f8;
       --panel: #ffffff;
@@ -17,28 +20,47 @@
       --warn: #b26a00;
       --ok: #0a7d3f;
       --fail: #ad1f2f;
+      --app-width: 1360px;
+      --app-min-width: 1200px;
+    }
+    html {
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: "IBM Plex Sans", "Noto Sans", sans-serif;
+      font-family: "Pretendard", "Noto Sans KR", "Noto Sans", sans-serif;
       background: radial-gradient(circle at 0% 0%, #eaf5ff, var(--bg) 40%);
       color: var(--text);
       min-height: 100vh;
+      min-width: var(--app-min-width);
       display: flex;
       flex-direction: column;
+      align-items: center;
     }
     header {
+      width: min(var(--app-width), calc(100% - 24px));
       padding: 16px 20px;
       border-bottom: 1px solid var(--line);
       background: var(--panel);
+      border-radius: 12px;
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
     }
-    .title { font-size: 18px; font-weight: 700; line-height: 1.2; }
+    .title {
+      font-size: 19px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .title-main {
+      color: #1b5e20;
+      font-weight: 800;
+    }
     .title-link { cursor: pointer; display: inline-block; }
     .title-note {
       display: inline;
@@ -48,20 +70,39 @@
       font-weight: 500;
     }
     .role-note {
-      margin-top: 2px;
+      display: none;
+    }
+    .subtitle { color: var(--muted); font-size: 12px; }
+    .header-controls {
       color: var(--muted);
       font-size: 12px;
     }
-    .subtitle { color: var(--muted); font-size: 12px; }
+    .header-controls label,
+    .header-controls input,
+    .header-controls select,
+    .header-controls button {
+      font-family: inherit;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 400;
+    }
     .layout {
+      width: min(var(--app-width), calc(100% - 24px));
+      margin-top: 12px;
       display: grid;
       grid-template-columns: 220px 1fr;
+      gap: 12px;
+      padding: 0;
       flex: 1;
       min-height: 0;
+      border-radius: 12px;
+      background: #edf2f9;
+      overflow: hidden;
     }
     nav {
-      border-right: 1px solid var(--line);
-      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 12px 12px;
       background: #f7f9fc;
     }
     .tab-btn {
@@ -75,9 +116,20 @@
       cursor: pointer;
       font-weight: 600;
     }
+    .diag-group {
+      display: none;
+      padding-left: 8px;
+      margin-top: 4px;
+    }
+    .diag-group.open {
+      display: block;
+    }
     .tab-btn.active { border-color: var(--primary); color: var(--primary); }
     main {
+      border: 1px solid var(--line);
+      border-radius: 10px;
       padding: 16px;
+      background: var(--panel);
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -126,10 +178,15 @@
       font-size: 13px;
       background: #fff;
     }
-    input, select, textarea { min-width: 120px; }
-    .uplink-text { min-width: 280px; width: 280px; }
-    .uplink-num { min-width: 210px; width: 210px; }
-    .uplink-num-sm { min-width: 72px; width: 72px; }
+    input, select, textarea { min-width: 100px; }
+    input, select {
+      height: 26px;
+      padding: 4px 8px;
+      font-size: 12px;
+    }
+    .uplink-text { min-width: 250px; width: 250px; }
+    .uplink-num { min-width: 190px; width: 190px; }
+    .uplink-num-sm { min-width: 64px; width: 64px; }
     textarea { width: 100%; min-height: 120px; font-family: "IBM Plex Mono", monospace; }
     button {
       cursor: pointer;
@@ -143,10 +200,10 @@
     header .row select,
     header .row button {
       min-width: 0;
-      padding: 6px 8px;
+      padding: 4px 8px;
       font-size: 12px;
       line-height: 1.2;
-      height: 30px;
+      height: 26px;
     }
     header .row label {
       font-size: 12px;
@@ -156,6 +213,10 @@
     }
     #apiKeyInput {
       width: 110px;
+    }
+    #commandIdInput {
+      height: 34px;
+      width: 260px;
     }
     .action-link {
       color: var(--primary);
@@ -241,25 +302,37 @@
     .uplink-preview-section {
       margin-top: 10px;
       padding-top: 10px;
-      border-top: 1px dashed #8cc9a5;
+    }
+    .uplink-preview-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 8px 0;
+    }
+    .uplink-sat-thumb {
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      padding: 4px;
+      background: radial-gradient(circle at 35% 30%, #f6fbff 0%, #d8e8f9 55%, #c7d8ed 100%);
+      box-shadow: 0 8px 18px rgba(39, 71, 125, 0.2);
+      flex: 0 0 auto;
+    }
+    .uplink-sat-thumb-art {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-image: url("/static/kompsat-2.jpg?v=20260303");
+      background-size: cover;
+      background-position: center;
+      border: 1px solid #b9cce5;
     }
     .uplink-preview-title {
       width: 100%;
-      margin: 0 0 8px 0;
+      margin: 0;
       color: var(--muted);
       font-size: 13px;
       font-weight: 600;
-    }
-    .preview-box {
-      border: 1px dashed #8cc9a5;
-    }
-    .uplink-preview-section input,
-    .uplink-preview-section select,
-    .uplink-preview-section button {
-      border: 1px dashed #8cc9a5;
-    }
-    .uplink-preview-section #previewImage {
-      border: 1px dashed #8cc9a5 !important;
     }
     .uplink-form-shell {
       margin-top: 8px;
@@ -301,6 +374,31 @@
       padding: 14px;
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
     }
+    .sat-types-modal {
+      width: min(920px, 98vw);
+      max-height: 92vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 8px;
+    }
+    .sat-types-meta {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .sat-types-json {
+      margin: 0;
+      max-height: calc(92vh - 130px);
+      overflow: auto;
+      border: 1px solid #d3deed;
+      border-radius: 10px;
+      background: #0f1722;
+      color: #d9e7f6;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.42;
+      font-family: "IBM Plex Mono", monospace;
+      white-space: pre;
+    }
     .modal-header {
       display: flex;
       align-items: center;
@@ -336,13 +434,21 @@
       color: #fff;
       background: var(--primary);
       font-weight: 700;
+      width: 100%;
+      min-height: 48px;
+    }
+    .map-preview-btn {
+      border-color: var(--primary);
+      color: #fff;
+      background: var(--primary);
+      font-weight: 700;
     }
     button.selected {
       border-color: var(--primary);
       color: #fff;
       background: var(--primary);
     }
-    .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
     .kpi-nav-card { cursor: pointer; }
     .kpi { font-size: 18px; font-weight: 700; }
     .muted { color: var(--muted); font-size: 12px; }
@@ -429,6 +535,13 @@
       font-size: 12px;
       max-height: 260px;
     }
+    #scenarioOutput {
+      height: 110px;
+      min-height: 110px;
+      max-height: 110px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
     .footer-log {
       position: static;
       background: #fdfefe;
@@ -450,23 +563,102 @@
     .footer-log-head h3 {
       margin: 0;
     }
-    .log-debug-toggle {
-      min-width: 88px;
-      font-size: 12px;
-      padding: 6px 10px;
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .section-head h3 {
+      margin: 0;
+    }
+    .mini-refresh-btn {
+      width: 24px;
+      height: 24px;
+      min-width: 24px;
       border-radius: 999px;
+      padding: 0;
+      font-size: 13px;
+      line-height: 1;
+      border: 1px solid #c7d7ec;
+      color: #345a8a;
+      background: #f5f9ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mini-refresh-btn:hover {
+      background: #eaf2ff;
+      border-color: #b3c9e8;
+    }
+    .report-refresh-btn {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 999px;
+      padding: 0;
+      font-size: 15px;
+      line-height: 1;
+      border: 1px solid #c7d7ec;
+      color: #345a8a;
+      background: #f5f9ff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .report-refresh-btn:hover {
+      background: #eaf2ff;
+      border-color: #b3c9e8;
+    }
+    .log-debug-toggle {
+      min-width: 0;
+      height: 24px;
+      padding: 0 8px;
+      font-size: 11px;
+      line-height: 1;
+      border-radius: 999px;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     }
     .site-footer {
+      width: min(var(--app-width), calc(100% - 24px));
+      margin-top: 12px;
       border-top: 1px solid var(--line);
       background: #ffffff;
       padding: 10px 16px;
       color: var(--muted);
       font-size: 12px;
       text-align: center;
+      border-radius: 12px;
     }
     .site-footer strong {
       color: var(--text);
       font-weight: 600;
+    }
+    .debug-floating-bar {
+      position: absolute;
+      top: 60px;
+      right: 8px;
+      z-index: 20;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .debug-floating-btn {
+      min-width: 0;
+      height: 24px;
+      padding: 0 8px;
+      font-size: 11px;
+      line-height: 1;
+      border-radius: 999px;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .debug-floating-btn.is-on,
+    .log-debug-toggle.is-on {
+      border-color: var(--ok);
+      background: var(--ok);
+      color: #fff;
     }
     .log-scroll {
       min-height: 460px;
@@ -507,16 +699,30 @@
       padding: 3px 9px;
       pointer-events: none;
     }
+    .dashboard-hero-wrap.no-expand {
+      cursor: default;
+    }
+    .dashboard-hero-wrap.no-expand::after {
+      display: none;
+    }
     .dashboard-hero {
       width: 100%;
-      height: min(24vw, 250px);
-      min-height: 150px;
+      height: min(12vw, 120px);
+      min-height: 120px;
       object-fit: cover;
       object-position: center top;
       display: block;
     }
+    .dashboard-hero-full {
+      height: auto;
+      min-height: 0;
+      object-fit: contain;
+      object-position: center;
+      background: #f6f9ff;
+    }
     .hero-modal {
-      width: min(1180px, 94vw);
+      width: fit-content;
+      max-width: 94vw;
       max-height: 92vh;
       background: #fff;
       border: 1px solid #dbe5f3;
@@ -524,18 +730,20 @@
       box-shadow: 0 24px 54px rgba(15, 36, 77, 0.22);
       overflow: hidden;
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto auto;
     }
     .hero-modal img {
-      width: 100%;
-      height: calc(92vh - 62px);
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: 65vh;
       object-fit: contain;
       display: block;
+      margin: 0 auto;
       background: #f7fbff;
     }
     @media (max-width: 980px) {
       .layout { grid-template-columns: 1fr; }
-      nav { border-right: 0; border-bottom: 1px solid var(--line); }
     }
   </style>
 </head>
@@ -546,52 +754,49 @@
         class="title title-link"
         role="button"
         tabindex="0"
-        onclick="openTabById('dashboard')"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTabById('dashboard');}"
-      >K-Sattie Sky Hub <span class="title-note">(uplink수신-> 위성촬영 -> downlink전송)</span></div>
-      <div class="subtitle">API Base URL: <span id="baseUrlLabel">http://localhost:6005</span></div>
+        onclick="openTabById('external-monitoring')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openTabById('external-monitoring');}"
+      ><span class="title-main">K-Sattie Sky Hub</span></div>
+      <div class="subtitle">위성관리, 업링크 요청 접수, 위성 촬영 처리, 다운링크 전달 콘솔 서비스</div>
       <div id="authNotice" class="role-note"></div>
     </div>
-    <div class="row">
+    <div class="row header-controls">
       <label for="mockUserSelect" title="콘솔 테스트용 사용자 역할을 선택합니다.">User
         <select id="mockUserSelect" title="현재 사용자 계정(역할) 선택: admin/operator/requestor" onchange="onMockUserChange()"></select>
       </label>
-      <input id="baseUrlInput" value="http://localhost:6005" title="K-Sattie Sky Hub API 기본 URL을 입력합니다." />
-      <input id="apiKeyInput" value="change-me" placeholder="x-api-key" title="운영 API 호출에 필요한 인증키(x-api-key)입니다. 서버의 SATTI_API_KEY 값과 동일하게 입력하세요." />
-      <button onclick="setBaseUrl()" title="입력한 API URL/API Key를 현재 콘솔 설정으로 적용합니다.">Apply URL</button>
-      <button onclick="clearImages()" title="생성된 다운링크 이미지를 서버에서 삭제하고 관련 명령 상태를 정리합니다.">Clear Images</button>
-      <button onclick="clearLogs()" title="화면 로그/결과 표시를 초기화합니다(서버 데이터는 유지).">Clear Logs</button>
+      <input class="header-debug-only" id="baseUrlInput" value="http://localhost:6005" title="K-Sattie Sky Hub API 기본 홈페이지 URL을 입력합니다. 웹브라우저 창에 보이는 주소로 바꿔넣으세요. 예) https://echo.smartspace.co.kr" />
+      <input class="header-debug-only" id="apiKeyInput" value="change-me" placeholder="x-api-key" title="운영 API 호출에 필요한 인증키(x-api-key)입니다. 서버의 SATTI_API_KEY 값과 동일하게 입력하세요." />
+      <button class="header-debug-only" onclick="setBaseUrl()" title="입력한 API URL/API Key를 현재 콘솔 설정으로 적용합니다.">Apply URL</button>
+      <button class="header-debug-only" onclick="clearImages()" title="생성된 다운링크 이미지를 서버에서 삭제하고 관련 명령 상태를 정리합니다.">Clear Images</button>
+      <button class="header-debug-only" onclick="clearLogs()" title="화면 로그/결과 표시를 초기화합니다(서버 데이터는 유지).">Clear Logs</button>
+    </div>
+    <div class="debug-floating-bar" aria-label="Debug options">
+      <button
+        id="headerDebugToggle"
+        type="button"
+        class="btn-primary debug-floating-btn"
+        onclick="toggleHeaderDebugControls()"
+        title="상단 버튼 표시를 전환합니다. OFF일 때 User 정보만 표시됩니다."
+      >Debug ON</button>
     </div>
   </header>
 
   <div class="layout">
     <nav>
-      <button class="tab-btn active" data-tab="dashboard" onclick="showTab('dashboard', this)" title="Sky Hub 주요 현황과 KPI를 확인합니다.">Dashboard</button>
+      <button class="tab-btn" data-tab="dashboard" onclick="showTab('dashboard', this)" title="Sky Hub 주요 현황과 KPI를 확인합니다.">Dashboard</button>
       <button class="tab-btn" data-tab="satellites" data-role-allow="admin" onclick="showTab('satellites', this)" title="위성/지상국 정보를 생성·수정·삭제하고 시드 데이터를 설정합니다.">Satellites</button>
       <button class="tab-btn" data-tab="reports" onclick="showTab('reports', this)" title="위성별 촬영 성능 통계 리포트를 확인합니다.">Satellites Performance</button>
-      <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">Commands Monitor</button>
-      <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">Send 1 Uplink Scenario</button>
-      <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">Multi Payload Scenario</button>
+      <button class="tab-btn active" data-tab="external-monitoring" onclick="showTab('external-monitoring', this)" title="외부 페이로드 모니터링 및 API 호출 로그를 확인합니다.">Payload Monitoring</button>
+      <button id="diagGroupToggleBtn" class="tab-btn" type="button" onclick="toggleDiagGroup()">Diagnostics ▾</button>
+      <div id="diagGroup" class="diag-group open">
+        <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">• Send A Uplink</button>
+        <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">• Multi Payload Scenario</button>
+        <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">• Commands Monitor</button>
+      </div>
     </nav>
 
     <main>
-      <section id="dashboard" class="tab active">
-        <div class="card">
-          <div
-            class="dashboard-hero-wrap"
-            role="button"
-            tabindex="0"
-            onclick="openHeroModal()"
-            onkeydown="onHeroBannerKey(event)"
-            aria-label="Open brochure image in popup"
-          >
-            <img
-              class="dashboard-hero"
-              src="/static/k-sattie-sky-hub.png?v=20260302"
-              alt="K-Sattie system brochure overview"
-            />
-          </div>
-        </div>
+      <section id="dashboard" class="tab">
         <div class="card">
           <h2>Sky Hub Dashboard</h2>
           <div class="row">
@@ -611,10 +816,13 @@
           <div id="stateDist" class="muted">No command data.</div>
         </div>
         <div class="card">
-          <h3>Completed Image Links</h3>
+          <div class="section-head">
+            <h3>Completed Image Links</h3>
+            <button class="mini-refresh-btn" type="button" onclick="refreshCompletedImageLinks()" title="Completed Image Links 새로고침">↻</button>
+          </div>
           <div id="completedLinksSummaryDashboard" class="muted">No command data.</div>
           <table>
-            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th></tr></thead>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Image Created At (KST)</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Downlink</th></tr></thead>
             <tbody id="completedLinksBodyDashboard"></tbody>
           </table>
         </div>
@@ -771,25 +979,30 @@
           </div>
           <div class="uplink-preview-shell">
           <div class="uplink-preview-section">
-            <div class="uplink-preview-title">위성사진(downlink)생성 시뮬레이션 옵션(선택)</div>
+            <div class="uplink-preview-head">
+              <div class="uplink-sat-thumb" aria-hidden="true">
+                <div class="uplink-sat-thumb-art"></div>
+              </div>
+              <div class="uplink-preview-title">위성사진촬영(downlink생성) 시뮬레이션 옵션</div>
+            </div>
             <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
               <label class="gen-choice" title="현재 방식. 서버 내부 로직으로 샘플 이미지 생성">
                 <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" checked onchange="setGenerationMode('INTERNAL')" />
                 <span>내부생성</span>
               </label>
-              <span class="gen-desc">PIL library를 사용하여 간단한 패턴 이미지 생성해서 보냄</span>
+              <span class="gen-desc">파이썬 PIL library를 사용하여 간단한 패턴 이미지 생성해서 보냅니다.</span>
             </div>
             <div class="row gen-option">
               <label class="gen-choice" title="외부 지도 타일(위경도) 기반으로 이미지 생성">
                 <input id="modeExternalRadio" type="radio" name="generationMode" value="EXTERNAL" onchange="setGenerationMode('EXTERNAL')" />
                 <span>외부생성</span>
               </label>
-              <span class="gen-desc">오픈소스맵 온라인 연동으로 지도맵 생성해서 보냄</span>
+              <span class="gen-desc">오픈소스맵 온라인사이트 연동해서 해당 위경도 지도맵이미지를 생성해서 보내줍니다.</span>
               <select id="externalMapSource" class="uplink-num" title="외부 지도 소스">
                 <option value="OSM">external_map_source: OSM</option>
               </select>
               <input id="externalMapZoom" class="uplink-num-sm" type="number" min="1" max="19" value="19" placeholder="19" title="외부 지도 줌 레벨(1~19)" />
-              <button type="button" onclick="previewExternalMap()" title="현재 위경도/사이즈 기준으로 외부 지도 프리뷰 조회">Map Preview</button>
+              <button type="button" class="map-preview-btn" onclick="previewExternalMap()" title="현재 위경도/사이즈 기준으로 외부 지도 프리뷰 조회">Map Preview 보기</button>
             </div>
             <div class="card preview-box">
               <h3>External Map Preview</h3>
@@ -800,6 +1013,7 @@
           </div>
           <pre id="uplinkResult">No uplink submitted.</pre>
         </div>
+        <div id="recentApiCallsHostUplink"></div>
       </section>
 
       <section id="commands" class="tab">
@@ -821,9 +1035,12 @@
           <pre id="commandJson">{}</pre>
         </div>
         <div class="card">
-          <h3>Completed Image Links</h3>
+          <div class="section-head">
+            <h3>Completed Image Links</h3>
+            <button class="mini-refresh-btn" type="button" onclick="refreshCompletedImageLinks()" title="Completed Image Links 새로고침">↻</button>
+          </div>
           <table>
-            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Image Created At</th><th>Downlink</th><th>Select</th></tr></thead>
+            <thead><tr><th>Command ID</th><th>Satellite Name</th><th>Image Created At (KST)</th><th>업무이름</th><th>대상지역명칭</th><th>Ground Station</th><th>Requestor ID</th><th>State</th><th>Downlink</th><th>Select</th></tr></thead>
             <tbody id="completedLinksBody"></tbody>
           </table>
         </div>
@@ -833,8 +1050,8 @@
         <div class="card">
           <h2>Satellite Imaging Performance Statistics</h2>
           <div class="row">
-            <button class="btn-primary" onclick="refreshDashboard()">Refresh Report</button>
             <span id="reportGeneratedAt" class="muted">No report generated.</span>
+            <button class="report-refresh-btn" type="button" onclick="refreshDashboard()" title="Refresh Report">↻</button>
           </div>
           <div id="reportSummary" class="muted">No command data.</div>
         </div>
@@ -878,9 +1095,29 @@
           </div>
           <pre id="scenarioOutput">No scenario executed.</pre>
         </div>
+        <div id="recentApiCallsHostScenarios"></div>
       </section>
 
-      <div class="footer-log card">
+      <section id="external-monitoring" class="tab active">
+        <div class="card">
+          <div
+            class="dashboard-hero-wrap no-expand"
+          >
+            <img
+              class="dashboard-hero dashboard-hero-full"
+              src="/static/k-sattie-sky-hub.jpg?v=20260303"
+              alt="K-Sattie system brochure overview"
+            />
+          </div>
+        </div>
+        <div class="card">
+          <h2>Payload Monitoring</h2>
+          <div class="muted">External payload monitoring and API call logs.</div>
+        </div>
+        <div id="recentApiCallsHostPayload"></div>
+      </section>
+
+      <div id="recentApiCallsPanel" class="footer-log card" style="display:none;">
         <div class="footer-log-head">
           <h3>Recent API Calls</h3>
           <button id="debugLogToggle" type="button" class="btn-primary log-debug-toggle" onclick="toggleDebugLogs()">Debug ON</button>
@@ -909,6 +1146,17 @@
     <strong>K-Sattie DP/DA system</strong>.
     All rights reserved.
   </footer>
+
+  <div id="satTypesModalBackdrop" class="modal-backdrop" onclick="closeSatelliteTypesModal(event)">
+    <div class="modal sat-types-modal" role="dialog" aria-modal="true" aria-labelledby="satTypesModalTitle">
+      <div class="modal-header">
+        <div id="satTypesModalTitle" class="modal-title">Satellite Types Response</div>
+        <button class="modal-close" type="button" onclick="closeSatelliteTypesModal()">&times;</button>
+      </div>
+      <div id="satTypesModalMeta" class="sat-types-meta">No response loaded.</div>
+      <pre id="satTypesModalJson" class="sat-types-json">{}</pre>
+    </div>
+  </div>
 
   <div id="satEditModalBackdrop" class="modal-backdrop" onclick="closeSatelliteEditModal(event)">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="satEditModalTitle">
@@ -964,13 +1212,9 @@
   </div>
 
   <div id="heroImageModalBackdrop" class="modal-backdrop" onclick="closeHeroModal(event)">
-    <div class="hero-modal" role="dialog" aria-modal="true" aria-labelledby="heroImageModalTitle">
-      <div class="modal-header">
-        <div id="heroImageModalTitle" class="modal-title">K-Sattie Sky Hub Brochure</div>
-        <button class="modal-close" type="button" onclick="closeHeroModal()">&times;</button>
-      </div>
+    <div class="hero-modal" role="dialog" aria-modal="true" aria-label="K-Sattie system brochure popup">
       <img
-        src="/static/k-sattie-sky-hub.png?v=20260302"
+        src="/static/k-sattie-sky-hub.jpg?v=20260303"
         alt="K-Sattie system brochure full image"
       />
     </div>
@@ -982,6 +1226,7 @@
     let apiKey = localStorage.getItem("simApiKey") || "change-me";
     let currentCommandId = "";
     let fetchFollowTimer = null;
+    let serverApiLogPollTimer = null;
     let passCount = 0;
     let failCount = 0;
     let apiCallLogs = [];
@@ -989,6 +1234,7 @@
     let editingGroundStationId = "";
     let generationMode = "INTERNAL";
     let debugLogPretty = localStorage.getItem("debugLogPretty") !== "off";
+    let headerDebugControlsOn = localStorage.getItem("headerDebugControls") !== "off";
     const previewState = {
       centerLat: null,
       centerLon: null,
@@ -1014,6 +1260,7 @@
     }
 
     function hasTabAccess(tabId) {
+      if (tabId === "external-monitoring") return true;
       if (currentUser.role === "admin") return true;
       if (currentUser.role === "operator") {
         return true;
@@ -1058,7 +1305,7 @@
     function applyRoleAccessControl() {
       const notice = document.getElementById("authNotice");
       if (notice) {
-        notice.textContent = `Current User: ${currentUser.name} (${currentUser.role})`;
+        notice.textContent = "";
       }
       document.querySelectorAll(".tab-btn[data-tab]").forEach((btn) => {
         const tabId = btn.getAttribute("data-tab");
@@ -1453,8 +1700,8 @@
       apiKey = document.getElementById("apiKeyInput").value.trim();
       localStorage.setItem("simApiBaseUrl", apiBaseUrl);
       localStorage.setItem("simApiKey", apiKey);
-      document.getElementById("baseUrlLabel").textContent = apiBaseUrl;
       logCall("SYS", "BASE", 200, apiBaseUrl);
+      startServerApiLogPolling();
     }
 
     function showTab(id, btn) {
@@ -1467,9 +1714,27 @@
       document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
       document.getElementById(id).classList.add("active");
       if (btn) btn.classList.add("active");
+      mountRecentApiCallsPanel(id);
       if (id === "dashboard" || id === "reports") {
         refreshDashboard();
       }
+    }
+
+    function mountRecentApiCallsPanel(tabId) {
+      const panel = document.getElementById("recentApiCallsPanel");
+      if (!panel) return;
+      let host = null;
+      if (tabId === "uplink") host = document.getElementById("recentApiCallsHostUplink");
+      if (tabId === "scenarios") host = document.getElementById("recentApiCallsHostScenarios");
+      if (tabId === "external-monitoring") host = document.getElementById("recentApiCallsHostPayload");
+      if (!host) {
+        panel.style.display = "none";
+        return;
+      }
+      if (panel.parentElement !== host) {
+        host.appendChild(panel);
+      }
+      panel.style.display = "";
     }
 
     function openTabById(id) {
@@ -1477,8 +1742,16 @@
       showTab(id, btn || null);
     }
 
+    function toggleDiagGroup() {
+      const group = document.getElementById("diagGroup");
+      const toggleBtn = document.getElementById("diagGroupToggleBtn");
+      if (!group || !toggleBtn) return;
+      const isOpen = group.classList.toggle("open");
+      toggleBtn.textContent = isOpen ? "Diagnostics ▾" : "Diagnostics ▸";
+    }
+
     function markButtonSelected(btn) {
-      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header") || btn.id === "debugLogToggle") return;
+      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header") || btn.id === "debugLogToggle" || btn.classList.contains("mini-refresh-btn")) return;
       document.querySelectorAll("main button.selected").forEach((el) => el.classList.remove("selected"));
       btn.classList.add("selected");
     }
@@ -1542,14 +1815,35 @@
       const btn = document.getElementById("debugLogToggle");
       if (!btn) return;
       btn.textContent = debugLogPretty ? "Debug ON" : "Debug OFF";
-      btn.classList.toggle("selected", debugLogPretty);
+      btn.classList.toggle("is-on", debugLogPretty);
     }
 
-    function toggleDebugLogs() {
-      debugLogPretty = !debugLogPretty;
+    function updateHeaderDebugToggleButton() {
+      const btn = document.getElementById("headerDebugToggle");
+      if (!btn) return;
+      btn.textContent = headerDebugControlsOn ? "Debug ON" : "Debug OFF";
+      btn.classList.toggle("is-on", headerDebugControlsOn);
+    }
+
+    function applyHeaderDebugVisibility() {
+      document.querySelectorAll(".header-debug-only").forEach((el) => {
+        el.style.display = headerDebugControlsOn ? "" : "none";
+      });
+      debugLogPretty = headerDebugControlsOn;
       localStorage.setItem("debugLogPretty", debugLogPretty ? "on" : "off");
       updateDebugToggleButton();
       renderApiLogs();
+      updateHeaderDebugToggleButton();
+    }
+
+    function toggleHeaderDebugControls() {
+      headerDebugControlsOn = !headerDebugControlsOn;
+      localStorage.setItem("headerDebugControls", headerDebugControlsOn ? "on" : "off");
+      applyHeaderDebugVisibility();
+    }
+
+    function toggleDebugLogs() {
+      toggleHeaderDebugControls();
     }
 
     function renderApiLogs() {
@@ -1568,6 +1862,67 @@
         }
         tbody.appendChild(tr);
       });
+    }
+
+    function formatApiLogTimeLabel(isoString) {
+      const dt = new Date(isoString);
+      if (Number.isNaN(dt.getTime())) return "-";
+      const mm = String(dt.getMonth() + 1).padStart(2, "0");
+      const dd = String(dt.getDate()).padStart(2, "0");
+      const hh = String(dt.getHours()).padStart(2, "0");
+      const mi = String(dt.getMinutes()).padStart(2, "0");
+      const ss = String(dt.getSeconds()).padStart(2, "0");
+      return `${mm}/${dd} ${hh}:${mi}:${ss}`;
+    }
+
+    function formatKstDateTime(value) {
+      if (!value || value === "-") return "-";
+      const dt = new Date(value);
+      if (Number.isNaN(dt.getTime())) return String(value);
+      const formatted = new Intl.DateTimeFormat("ko-KR", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(dt);
+      return `${formatted} KST`;
+    }
+
+    async function syncServerApiLogs() {
+      try {
+        const headers = new Headers();
+        if (apiKey) headers.set("x-api-key", apiKey);
+        const response = await fetch(`${apiBaseUrl}/monitor/api-calls?limit=100`, { headers });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!Array.isArray(payload)) return;
+        apiCallLogs = payload
+          .slice()
+          .sort((a, b) => Date.parse(b.time || "") - Date.parse(a.time || ""))
+          .map((row) => ({
+          timeLabel: formatApiLogTimeLabel(row.time),
+          method: row.method || "-",
+          path: row.path || "-",
+          status: row.status ?? "-",
+          summary: row.summary || `client=${row.client_ip || "unknown"}`,
+          }));
+        renderApiLogs();
+      } catch (_) {
+        // Keep existing logs when polling fails.
+      }
+    }
+
+    function startServerApiLogPolling() {
+      if (serverApiLogPollTimer) {
+        clearInterval(serverApiLogPollTimer);
+        serverApiLogPollTimer = null;
+      }
+      syncServerApiLogs();
+      serverApiLogPollTimer = setInterval(syncServerApiLogs, 1500);
     }
 
     function escapeHtml(v) {
@@ -1805,9 +2160,32 @@
     }
 
     async function loadSatelliteTypes() {
-      const { payload } = await api("/satellite-types");
-      const txt = Object.keys(payload || {}).join(", ");
-      document.getElementById("healthResult").textContent = `Types loaded: ${txt || "none"}`;
+      const { response, payload } = await api("/satellite-types");
+      const meta = document.getElementById("satTypesModalMeta");
+      const body = document.getElementById("satTypesModalJson");
+      if (meta) {
+        const keys = Object.keys(payload || {});
+        meta.textContent = `status=${response.status} | type_count=${keys.length} | keys=${keys.join(", ") || "none"}`;
+      }
+      if (body) {
+        body.textContent = JSON.stringify(payload ?? {}, null, 2);
+      }
+      openSatelliteTypesModal();
+    }
+
+    function openSatelliteTypesModal() {
+      const backdrop = document.getElementById("satTypesModalBackdrop");
+      if (!backdrop) return;
+      backdrop.style.display = "flex";
+    }
+
+    function closeSatelliteTypesModal(event = null) {
+      const backdrop = document.getElementById("satTypesModalBackdrop");
+      if (!backdrop) return;
+      if (event && event.target && event.target.id !== "satTypesModalBackdrop") {
+        return;
+      }
+      backdrop.style.display = "none";
     }
 
     async function seedSatellites() {
@@ -2187,9 +2565,6 @@
     function closeHeroModal(event = null) {
       const backdrop = document.getElementById("heroImageModalBackdrop");
       if (!backdrop) return;
-      if (event && event.target && event.target.id !== "heroImageModalBackdrop") {
-        return;
-      }
       backdrop.style.display = "none";
     }
 
@@ -2509,6 +2884,11 @@
       renderSatelliteReport(satInfo.rows, commands);
     }
 
+    async function refreshCompletedImageLinks() {
+      await loadAllCommands();
+      renderCompletedLinks();
+    }
+
     function renderCompletedLinksRows(body, rows, stateChangedByCommand = new Map(), opts = {}) {
       const showSelect = opts.showSelect !== false;
       if (!body) return;
@@ -2525,7 +2905,7 @@
           link = `<a href="${downlinkUrl}" target="_blank" rel="noopener noreferrer"><img class="downlink-thumb" src="${downlinkUrl}" alt="downlink thumbnail" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" /></a><a href="${downlinkUrl}" target="_blank" rel="noopener noreferrer">Download</a>`;
         }
         const selectAction = `<a href="#" class="action-link" onclick="selectCommandForMonitor('${cmd.command_id}'); return false;">Select</a>`;
-        const imageCreatedAt = cmd.acquisition_metadata?.captured_at || cmd.updated_at || "-";
+        const imageCreatedAt = formatKstDateTime(cmd.acquisition_metadata?.captured_at || cmd.updated_at || "-");
         const satName = satelliteNameById.get(cmd.satellite_id) || cmd.satellite_id;
         const missionName = cmd.mission_name || "(none)";
         const aoiName = cmd.aoi_name || "(none)";
@@ -2533,8 +2913,8 @@
         const requestorId = cmd.requestor_id || "(none)";
         const stateClass = stateChangedByCommand.get(cmd.command_id) ? "state-flash" : "";
         return showSelect
-          ? `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td><td>${selectAction}</td></tr>`
-          : `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${imageCreatedAt}</td><td>${link}</td></tr>`;
+          ? `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${imageCreatedAt}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${link}</td><td>${selectAction}</td></tr>`
+          : `<tr><td>${cmd.command_id}</td><td>${satName}</td><td>${imageCreatedAt}</td><td>${missionName}</td><td>${aoiName}</td><td>${stationLabel}</td><td>${requestorId}</td><td><span class="${stateClass}">${cmd.state}</span></td><td>${link}</td></tr>`;
       }).join("");
     }
 
@@ -2804,16 +3184,20 @@
       initMockUsers();
       document.getElementById("baseUrlInput").value = apiBaseUrl;
       document.getElementById("apiKeyInput").value = apiKey;
-      document.getElementById("baseUrlLabel").textContent = apiBaseUrl;
       initCustomTooltips();
       initPreviewPanHandlers();
       updateDebugToggleButton();
+      applyHeaderDebugVisibility();
       renderApiLogs();
+      startServerApiLogPolling();
+      const activeTab = document.querySelector(".tab.active");
+      if (activeTab) mountRecentApiCallsPanel(activeTab.id);
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape") {
           closeSatelliteEditModal();
           closeGroundStationEditModal();
           closeHeroModal();
+          closeSatelliteTypesModal();
         }
       });
       document.getElementById("previewImage").style.display = "none";
