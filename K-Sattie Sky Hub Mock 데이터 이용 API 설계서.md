@@ -2,8 +2,45 @@
 
 - 문서명: K-Sattie Sky Hub Mock 데이터 이용 API 설계서
 - 프로젝트: K-Sattie Sky Hub
-- 버전: v0.5
-- 작성일: 2026-03-01
+- 버전: v0.6
+- 작성일: 2026-03-04
+
+## 0. 현행화 우선 규칙 (2026-03-04)
+
+아래 항목은 본 문서의 다른 섹션보다 우선 적용되는 현행 기준이다.
+
+- 식별자 정책
+  - 위성 외부 식별자: `satellite_id` (영문 모델명 기반)
+    - 예: `KOMPSAT-3`, `KOMPSAT-3A`, `GK-2A`, `425-PROJECT-1`, `CAS500-1`, `NEONSAT`
+  - 위성 내부 식별자: `internal_satellite_code` (`sat-xxxx`)
+  - 지상국 외부 식별자: `ground_station_id` (약칭 코드, 지역명+이니셜)
+    - 예: `DAE-MC`, `JEJ-M`, `INC-AR`
+  - 지상국 내부 식별자: `internal_ground_station_code` (`gnd-xxxx`)
+
+- 생성 API 입력
+  - `POST /satellites`: `satellite_id(optional)`, `name`, `type`, `status`
+    - 하위호환으로 `system_id` 입력도 허용
+  - `POST /ground-stations`: `ground_station_id(optional)`, `name`, `type`, `status`, `location`
+  - `ground_station_id` 미입력 시 약칭 코드 자동 생성(중복 시 `-2`, `-3` suffix)
+
+- 중복 제약
+  - 위성/지상국 `name` 중복 불가 (`POST`, `PATCH` 모두 `409`)
+  - 비교 기준: 대소문자/앞뒤 공백/연속 공백 무시
+
+- 자동 시드
+  - 서버 시작 시 기본 자동 실행:
+    - `POST /seed/mock-satellites`
+    - `POST /seed/mock-ground-stations`
+    - `POST /seed/mock-requestors`
+  - 제어 환경변수: `SATTI_AUTO_SEED_ON_STARTUP` (`1` 기본, `0` 비활성)
+
+- 응답 필드 현행
+  - `GET /satellites`: `satellite_id`, `internal_satellite_code`, `name`, `type`, `status`, `profile`, `eng_model`, `domain`, `resolution_perf`, `baseline_status`, `primary_mission`
+  - `GET /ground-stations`: `ground_station_id`, `internal_ground_station_code`, `name`, `type`, `status`, `location`
+
+- 시나리오
+  - `GET /scenarios` 제공
+  - `SCN-001`~`SCN-012`은 위 영문 `satellite_id` 기준으로 매핑
 
 ## 1. 목적
 
@@ -61,7 +98,7 @@
   - `admin`: 모든 메뉴/관리 기능 허용
   - `operator`: 위성/지상국 관리 기능 비허용
 - `operator`일 때 콘솔은 다음을 차단:
-  - `Satellites Status` 탭 접근
+  - `Satellites` 탭 접근
   - 관리성 API UI 호출 (`POST/PATCH/DELETE /satellites*`, `POST/PATCH/DELETE /ground-stations*`, Seed API 2종)
 - 주의: 위 규칙은 현재 프런트엔드 목 권한 제어이며, 백엔드 강제 RBAC는 별도 구현 대상
 
@@ -534,7 +571,7 @@
 
 ## 10. 콘솔 기본값 프리셋 규칙
 
-`Send 1 Uplink Scenario` 화면은 위성 선택 시 입력 필드를 자동 세팅한다.
+`Send A Uplink` 화면은 위성 선택 시 입력 필드를 자동 세팅한다.
 
 - 1순위: 시드 7개 위성 이름 기반 프리셋 적용
 - 2순위: 시드 외 위성은 위성 유형(`EO_OPTICAL`/`SAR`) fallback 프리셋 적용
@@ -572,7 +609,7 @@ curl -s -X POST "$BASE/uplink" \
   -H "x-api-key: $API_KEY" \
   -H 'Content-Type: application/json' \
   -d '{
-    "satellite_id":"sat-xxxxxxxx",
+    "satellite_id":"KOMPSAT-3",
     "mission_name":"harbor-monitoring",
     "aoi_name":"incheon-port",
     "aoi_center_lat":37.45,

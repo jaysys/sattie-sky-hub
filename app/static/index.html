@@ -145,9 +145,9 @@
       margin-bottom: 10px;
     }
     .entity-group {
-      border: 1px solid #b9c9dc;
+      border: 1px solid #cfe6cf;
       border-radius: 12px;
-      background: linear-gradient(180deg, #f8fbff 0%, #f4f8fd 100%);
+      background: linear-gradient(180deg, #f6fdf6 0%, #eef9ee 100%);
       padding: 10px;
       margin-bottom: 12px;
     }
@@ -155,9 +155,9 @@
       margin: 0 0 8px 0;
       padding: 6px 8px;
       border-radius: 8px;
-      border: 1px solid #d2deec;
-      background: #edf3fb;
-      color: #27435f;
+      border: 1px solid #cfe6cf;
+      background: #eef9ee;
+      color: #27543a;
       font-size: 13px;
       font-weight: 700;
       letter-spacing: 0.01em;
@@ -443,13 +443,17 @@
       background: var(--primary);
       font-weight: 700;
     }
-    button.selected {
+    main button:active {
       border-color: var(--primary);
       color: #fff;
       background: var(--primary);
     }
     .grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
-    .kpi-nav-card { cursor: pointer; }
+    .kpi-nav-card {
+      cursor: pointer;
+      background: #eef9ee;
+      border-color: #cfe6cf;
+    }
     .kpi { font-size: 18px; font-weight: 700; }
     .muted { color: var(--muted); font-size: 12px; }
     .badge {
@@ -764,9 +768,10 @@
       <label for="mockUserSelect" title="콘솔 테스트용 사용자 역할을 선택합니다.">User
         <select id="mockUserSelect" title="현재 사용자 계정(역할) 선택: admin/operator/requestor" onchange="onMockUserChange()"></select>
       </label>
-      <input class="header-debug-only" id="baseUrlInput" value="http://localhost:6005" title="K-Sattie Sky Hub API 기본 홈페이지 URL을 입력합니다. 웹브라우저 창에 보이는 주소로 바꿔넣으세요. 예) https://echo.smartspace.co.kr" />
+      <input class="header-debug-only" id="baseUrlInput" value="https://echo.smartspace.co.kr" title="K-Sattie Sky Hub API 기본 홈페이지 URL을 입력합니다. 웹브라우저 창에 보이는 주소로 바꿔넣으세요. 예) https://echo.smartspace.co.kr" />
       <input class="header-debug-only" id="apiKeyInput" value="change-me" placeholder="x-api-key" title="운영 API 호출에 필요한 인증키(x-api-key)입니다. 서버의 SATTI_API_KEY 값과 동일하게 입력하세요." />
       <button class="header-debug-only" onclick="setBaseUrl()" title="입력한 API URL/API Key를 현재 콘솔 설정으로 적용합니다.">Apply URL</button>
+      <button class="header-debug-only" onclick="clearDb()" title="SQLite DB를 초기화하고 시드 데이터를 재생성하며 생성 이미지/메타데이터를 정리합니다.">Clear DB</button>
       <button class="header-debug-only" onclick="clearImages()" title="생성된 다운링크 이미지를 서버에서 삭제하고 관련 명령 상태를 정리합니다.">Clear Images</button>
       <button class="header-debug-only" onclick="clearLogs()" title="화면 로그/결과 표시를 초기화합니다(서버 데이터는 유지).">Clear Logs</button>
     </div>
@@ -787,8 +792,8 @@
       <button class="tab-btn" data-tab="satellites" data-role-allow="admin" onclick="showTab('satellites', this)" title="위성/지상국 정보를 생성·수정·삭제하고 시드 데이터를 설정합니다.">Satellites</button>
       <button class="tab-btn" data-tab="reports" onclick="showTab('reports', this)" title="위성별 촬영 성능 통계 리포트를 확인합니다.">Satellites Performance</button>
       <button class="tab-btn active" data-tab="external-monitoring" onclick="showTab('external-monitoring', this)" title="외부 페이로드 모니터링 및 API 호출 로그를 확인합니다.">Payload Monitoring</button>
-      <button id="diagGroupToggleBtn" class="tab-btn" type="button" onclick="toggleDiagGroup()">Diagnostics ▾</button>
-      <div id="diagGroup" class="diag-group open">
+      <button id="diagGroupToggleBtn" class="tab-btn" type="button" onclick="toggleDiagGroup()">Diagnostics ▸</button>
+      <div id="diagGroup" class="diag-group">
         <button class="tab-btn" data-tab="uplink" onclick="showTab('uplink', this)" title="단일 업링크 시나리오를 수동으로 전송합니다.">• Send A Uplink</button>
         <button class="tab-btn" data-tab="scenarios" onclick="showTab('scenarios', this)" title="다중 API 시나리오를 실행해 정상/오류 흐름을 검증합니다.">• Multi Payload Scenario</button>
         <button class="tab-btn" data-tab="commands" onclick="showTab('commands', this)" title="업링크 명령 상태를 조회하고 재시도합니다.">• Commands Monitor</button>
@@ -805,11 +810,11 @@
           <div id="healthResult" class="muted">No checks executed.</div>
         </div>
         <div class="grid">
-          <div class="card kpi-nav-card" onclick="openTabById('satellites')" title="Satellites Configuration 화면으로 이동"><h3>Satellites</h3><div id="kpiSatellites" class="kpi">0</div></div>
-          <div class="card kpi-nav-card" onclick="openTabById('satellites')" title="Satellites Configuration 화면으로 이동"><h3>Ground Stations</h3><div id="kpiGroundStations" class="kpi">0</div></div>
-          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Uplink Commands</h3><div id="kpiCommands" class="kpi">0</div></div>
-          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Downlink Ready</h3><div id="kpiReady" class="kpi">0</div></div>
-          <div class="card kpi-nav-card" onclick="openTabById('commands')" title="Commands Status 화면으로 이동"><h3>Failed</h3><div id="kpiFailed" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabAndScroll('satellites', 'satelliteTableCard')" title="Satellites Configuration 화면으로 이동"><h3>Satellites</h3><div id="kpiSatellites" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabAndScroll('satellites', 'groundStationTableCard')" title="Satellites Configuration 화면으로 이동"><h3>Ground Stations</h3><div id="kpiGroundStations" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabAndScroll('commands', 'commandsControlCard')" title="Commands Status 화면으로 이동"><h3>Uplink Commands</h3><div id="kpiCommands" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabAndScroll('commands', 'commandsCompletedLinksCard')" title="Commands Status 화면으로 이동"><h3>Downlink Ready</h3><div id="kpiReady" class="kpi">0</div></div>
+          <div class="card kpi-nav-card" onclick="openTabAndScroll('commands', 'commandsCompletedLinksCard')" title="Commands Status 화면으로 이동"><h3>Failed</h3><div id="kpiFailed" class="kpi">0</div></div>
         </div>
         <div class="card">
           <h3>Command State Distribution</h3>
@@ -838,9 +843,6 @@
           <h2>Satellites Configuration</h2>
           <div id="satellitesAccessNote" class="muted"></div>
           <div class="row">
-            <button class="btn-primary" data-manage-control="infra" onclick="seedSatellites()" title="한국 위성 기반 초기 Mock 위성 데이터를 생성합니다. 이미 존재하는 동일 이름 위성은 중복 생성하지 않습니다.">Setup Initial Mock Satellites</button>
-            <button class="btn-primary" data-manage-control="infra" onclick="seedGroundStations()" title="업링크 요청 주체로 사용할 가상 지상국 데이터를 생성합니다.">Setup Initial Mock Ground Stations</button>
-            <button class="btn-primary" data-manage-control="infra" onclick="seedRequestors()" title="지상국별 초기 Mock 요청자(requestor) 데이터를 생성합니다.">Setup Initial Mock Requestors</button>
             <button onclick="loadSatelliteTypes()">Show Satellite Types</button>
           </div>
         </div>
@@ -849,16 +851,17 @@
           <div class="card">
             <h3>Create Satellite</h3>
             <div class="row">
+              <input id="newSatId" data-manage-control="infra" placeholder="satellite_id (optional)" value="" />
               <input id="newSatName" data-manage-control="infra" placeholder="name" value="manual-sat" />
               <select id="newSatType" data-manage-control="infra"><option>EO_OPTICAL</option><option>SAR</option></select>
               <select id="newSatStatus" data-manage-control="infra"><option>AVAILABLE</option><option>MAINTENANCE</option></select>
               <button class="btn-primary" data-manage-control="infra" onclick="createSatellite()">Create</button>
             </div>
           </div>
-          <div class="card">
+          <div id="satelliteTableCard" class="card">
             <h3>Satellites Table</h3>
             <table>
-              <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Status</th><th>Profile</th><th>Actions</th></tr></thead>
+              <thead><tr><th>satellite_id</th><th>internal_satellite_code</th><th>name</th><th>type</th><th>status</th><th>profile</th><th>actions</th></tr></thead>
               <tbody id="satelliteTable"></tbody>
             </table>
           </div>
@@ -869,6 +872,7 @@
           <div class="card">
             <h3>Create Ground Station</h3>
             <div class="row">
+              <input id="newGroundStationId" data-manage-control="infra" placeholder="ground_station_id (optional)" value="" />
               <input id="newGroundStationName" data-manage-control="infra" placeholder="name" value="manual-gs" />
               <select id="newGroundStationType" data-manage-control="infra">
                 <option>FIXED</option>
@@ -881,10 +885,10 @@
               <button class="btn-primary" data-manage-control="infra" onclick="createGroundStation()">Create</button>
             </div>
           </div>
-          <div class="card">
+          <div id="groundStationTableCard" class="card">
             <h3>Ground Stations Table</h3>
             <table>
-              <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Status</th><th>Location</th><th>Actions</th></tr></thead>
+              <thead><tr><th>ground_station_id</th><th>internal_ground_station_code</th><th>name</th><th>type</th><th>status</th><th>location</th><th>actions</th></tr></thead>
               <tbody id="groundStationTable"></tbody>
             </table>
           </div>
@@ -987,21 +991,21 @@
             </div>
             <div class="row gen-option" role="radiogroup" aria-label="생성 방식 선택">
               <label class="gen-choice" title="현재 방식. 서버 내부 로직으로 샘플 이미지 생성">
-                <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" checked onchange="setGenerationMode('INTERNAL')" />
+                <input id="modeInternalRadio" type="radio" name="generationMode" value="INTERNAL" onchange="setGenerationMode('INTERNAL')" />
                 <span>내부생성</span>
               </label>
               <span class="gen-desc">파이썬 PIL library를 사용하여 간단한 패턴 이미지 생성해서 보냅니다.</span>
             </div>
             <div class="row gen-option">
               <label class="gen-choice" title="외부 지도 타일(위경도) 기반으로 이미지 생성">
-                <input id="modeExternalRadio" type="radio" name="generationMode" value="EXTERNAL" onchange="setGenerationMode('EXTERNAL')" />
+                <input id="modeExternalRadio" type="radio" name="generationMode" value="EXTERNAL" checked onchange="setGenerationMode('EXTERNAL')" />
                 <span>외부생성</span>
               </label>
               <span class="gen-desc">오픈소스맵 온라인사이트 연동해서 해당 위경도 지도맵이미지를 생성해서 보내줍니다.</span>
               <select id="externalMapSource" class="uplink-num" title="외부 지도 소스">
                 <option value="OSM">external_map_source: OSM</option>
               </select>
-              <input id="externalMapZoom" class="uplink-num-sm" type="number" min="1" max="19" value="19" placeholder="19" title="외부 지도 줌 레벨(1~19)" />
+              <input id="externalMapZoom" class="uplink-num-sm" type="number" min="1" max="19" value="16" placeholder="16" title="외부 지도 줌 레벨(1~19)" />
               <button type="button" class="map-preview-btn" onclick="previewExternalMap()" title="현재 위경도/사이즈 기준으로 외부 지도 프리뷰 조회">Map Preview 보기</button>
             </div>
             <div class="card preview-box">
@@ -1017,7 +1021,7 @@
       </section>
 
       <section id="commands" class="tab">
-        <div class="card">
+        <div id="commandsControlCard" class="card">
           <h2>Execute Commands & Monitor</h2>
           <div class="row">
             <input id="commandIdInput" placeholder="cmd-..." />
@@ -1034,7 +1038,7 @@
           <h3>acquisition_metadata / product_metadata</h3>
           <pre id="commandJson">{}</pre>
         </div>
-        <div class="card">
+        <div id="commandsCompletedLinksCard" class="card">
           <div class="section-head">
             <h3>Completed Image Links</h3>
             <button class="mini-refresh-btn" type="button" onclick="refreshCompletedImageLinks()" title="Completed Image Links 새로고침">↻</button>
@@ -1082,12 +1086,18 @@
         <div class="card">
           <h2>Multi Payload Scenario Runner</h2>
           <div class="row">
-            <button onclick="runScenario('SCN-001')">SCN-001 Normal EO</button>
-            <button onclick="runScenario('SCN-002')">SCN-002 Normal SAR</button>
-            <button onclick="runScenario('SCN-003')">SCN-003 Download 404</button>
-            <button onclick="runScenario('SCN-004')">SCN-004 Download 409</button>
-            <button onclick="runScenario('SCN-005')">SCN-005 Maintenance Fail</button>
-            <button onclick="runScenario('SCN-006')">SCN-006 Invalid Sat 404</button>
+            <button onclick="runScenario('SCN-001')">SCN-001 국토 정사영상</button>
+            <button onclick="runScenario('SCN-002')">SCN-002 야간 산불</button>
+            <button onclick="runScenario('SCN-003')">SCN-003 도시변화</button>
+            <button onclick="runScenario('SCN-004')">SCN-004 홍수 SAR</button>
+            <button onclick="runScenario('SCN-005')">SCN-005 정밀 SAR 재식별</button>
+            <button onclick="runScenario('SCN-006')">SCN-006 태풍 추적</button>
+            <button onclick="runScenario('SCN-007')">SCN-007 미세먼지 추적</button>
+            <button onclick="runScenario('SCN-008')">SCN-008 전략표적 EO/IR</button>
+            <button onclick="runScenario('SCN-009')">SCN-009 악천후 표적 SAR</button>
+            <button onclick="runScenario('SCN-010')">SCN-010 SAR 군집</button>
+            <button onclick="runScenario('SCN-011')">SCN-011 재난 대응</button>
+            <button onclick="runScenario('SCN-012')">SCN-012 초소형 군집</button>
           </div>
           <div class="row">
             <span class="badge ok" id="scnPass">Pass: 0</span>
@@ -1168,6 +1178,10 @@
         <input id="modalEditSatName" placeholder="satellite name" style="width:100%;" />
       </div>
       <div class="row">
+        <select id="modalEditSatType" style="min-width:180px;">
+          <option>EO_OPTICAL</option>
+          <option>SAR</option>
+        </select>
         <select id="modalEditSatStatus" style="min-width:180px;">
           <option>AVAILABLE</option>
           <option>MAINTENANCE</option>
@@ -1222,7 +1236,43 @@
 
   <script>
     const STATE_ORDER = ["QUEUED", "ACKED", "CAPTURING", "DOWNLINK_READY", "FAILED"];
-    let apiBaseUrl = localStorage.getItem("simApiBaseUrl") || "http://localhost:6005";
+    const PROD_API_BASE_URL = "https://echo.smartspace.co.kr";
+    const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
+    const EXTERNAL_MAP_ZOOM_MIN = 1;
+    const EXTERNAL_MAP_ZOOM_MAX = 19;
+    const EXTERNAL_MAP_ZOOM_DEFAULT = 16;
+
+    function resolveDefaultApiBaseUrl() {
+      const host = (window.location.hostname || "").toLowerCase();
+      if (LOCAL_HOSTS.has(host)) {
+        return "http://localhost:6005";
+      }
+      if (host === "echo.smartspace.co.kr") {
+        return PROD_API_BASE_URL;
+      }
+      // For non-local custom domains, prefer same-origin API.
+      return `${window.location.protocol}//${window.location.host}`;
+    }
+
+    const storedApiBaseUrl = localStorage.getItem("simApiBaseUrl");
+    const currentHost = (window.location.hostname || "").toLowerCase();
+    const currentPort = (window.location.port || "").trim();
+    let apiBaseUrl;
+    if (currentHost === "echo.smartspace.co.kr") {
+      // If console itself is accessed through :6005 on the same host,
+      // use same-origin API to support internal direct port communication.
+      if (currentPort === "6005") {
+        apiBaseUrl = `${window.location.protocol}//${window.location.host}`;
+      } else {
+        apiBaseUrl = PROD_API_BASE_URL;
+      }
+    } else if (LOCAL_HOSTS.has(currentHost)) {
+      // Local dev should always target local API server on :6005
+      // even when console UI is hosted on another local port (e.g. :6002).
+      apiBaseUrl = "http://localhost:6005";
+    } else {
+      apiBaseUrl = storedApiBaseUrl || resolveDefaultApiBaseUrl();
+    }
     let apiKey = localStorage.getItem("simApiKey") || "change-me";
     let currentCommandId = "";
     let fetchFollowTimer = null;
@@ -1232,13 +1282,13 @@
     let apiCallLogs = [];
     let editingSatelliteId = "";
     let editingGroundStationId = "";
-    let generationMode = "INTERNAL";
+    let generationMode = "EXTERNAL";
     let debugLogPretty = localStorage.getItem("debugLogPretty") !== "off";
-    let headerDebugControlsOn = localStorage.getItem("headerDebugControls") !== "off";
+    let headerDebugControlsOn = localStorage.getItem("headerDebugControls") === "on";
     const previewState = {
       centerLat: null,
       centerLon: null,
-      zoom: 19,
+      zoom: EXTERNAL_MAP_ZOOM_DEFAULT,
       source: "OSM",
       objectUrl: null,
     };
@@ -1389,168 +1439,22 @@
       applyRoleAccessControl();
     }
 
-    const UPLINK_PRESETS_BY_SEED_NAME = {
-      "KOMPSAT-3 (Arirang-3)": {
-        mission_name: "도심 정밀 지도화",
-        aoi_name: "서울 도심권",
-        aoi_center_lat: 37.5665,
-        aoi_center_lon: 126.9780,
-        aoi_bbox: [126.88, 37.48, 127.08, 37.66],
-        priority: "COMMERCIAL",
-        width: 1536,
-        height: 1536,
-        cloud_percent: 15,
-        max_cloud_cover_percent: 20,
-        max_off_nadir_deg: 20,
-        min_sun_elevation_deg: 25,
-        incidence_min_deg: null,
-        incidence_max_deg: null,
-        look_side: "ANY",
-        pass_direction: "ANY",
-        polarization: null,
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.05,
-      },
-      "KOMPSAT-3A (Arirang-3A)": {
-        mission_name: "야간 열 이상 감시",
-        aoi_name: "울산 산업단지",
-        aoi_center_lat: 35.5384,
-        aoi_center_lon: 129.3114,
-        aoi_bbox: [129.16, 35.45, 129.46, 35.63],
-        priority: "URGENT",
-        width: 1280,
-        height: 1280,
-        cloud_percent: 18,
-        max_cloud_cover_percent: 25,
-        max_off_nadir_deg: 25,
-        min_sun_elevation_deg: 18,
-        incidence_min_deg: null,
-        incidence_max_deg: null,
-        look_side: "ANY",
-        pass_direction: "ANY",
-        polarization: null,
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.05,
-      },
-      "CAS500-1 (NextSat-1)": {
-        mission_name: "농업 생육 모니터링",
-        aoi_name: "전라 농경지",
-        aoi_center_lat: 35.1,
-        aoi_center_lon: 126.9,
-        aoi_bbox: [126.6, 34.85, 127.2, 35.35],
-        priority: "COMMERCIAL",
-        width: 1024,
-        height: 1024,
-        cloud_percent: 20,
-        max_cloud_cover_percent: 30,
-        max_off_nadir_deg: 18,
-        min_sun_elevation_deg: 20,
-        incidence_min_deg: null,
-        incidence_max_deg: null,
-        look_side: "ANY",
-        pass_direction: "ANY",
-        polarization: null,
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.05,
-      },
-      "Cheollian-2B (GEO-KOMPSAT-2B)": {
-        mission_name: "해양 색상 관측",
-        aoi_name: "서해 한국 연안",
-        aoi_center_lat: 35.2,
-        aoi_center_lon: 124.8,
-        aoi_bbox: [123.8, 34.2, 125.8, 36.2],
-        priority: "BACKGROUND",
-        width: 768,
-        height: 768,
-        cloud_percent: 35,
-        max_cloud_cover_percent: 50,
-        max_off_nadir_deg: 30,
-        min_sun_elevation_deg: 15,
-        incidence_min_deg: null,
-        incidence_max_deg: null,
-        look_side: "ANY",
-        pass_direction: "ANY",
-        polarization: null,
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.06,
-      },
-      "KOMPSAT-5 (Arirang-5, SAR)": {
-        mission_name: "전천후 항만 감시",
-        aoi_name: "부산항",
-        aoi_center_lat: 35.1028,
-        aoi_center_lon: 129.0403,
-        aoi_bbox: [128.92, 35.0, 129.16, 35.2],
-        priority: "URGENT",
-        width: 1024,
-        height: 1024,
-        cloud_percent: 0,
-        max_cloud_cover_percent: null,
-        max_off_nadir_deg: null,
-        min_sun_elevation_deg: null,
-        incidence_min_deg: 25,
-        incidence_max_deg: 40,
-        look_side: "RIGHT",
-        pass_direction: "DESCENDING",
-        polarization: "VV",
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.04,
-      },
-      "KOMPSAT-6 (Arirang-6, SAR)": {
-        mission_name: "재난 신속 대응",
-        aoi_name: "강원 산사태 위험지역",
-        aoi_center_lat: 37.82,
-        aoi_center_lon: 128.2,
-        aoi_bbox: [127.85, 37.55, 128.55, 38.1],
-        priority: "URGENT",
-        width: 1280,
-        height: 1280,
-        cloud_percent: 0,
-        max_cloud_cover_percent: null,
-        max_off_nadir_deg: null,
-        min_sun_elevation_deg: null,
-        incidence_min_deg: 20,
-        incidence_max_deg: 42,
-        look_side: "LEFT",
-        pass_direction: "ASCENDING",
-        polarization: "VH",
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.04,
-      },
-      "KOMPSAT-Next-5 (C-band SAR)": {
-        mission_name: "해양 상황 인지",
-        aoi_name: "대한해협",
-        aoi_center_lat: 34.5,
-        aoi_center_lon: 128.7,
-        aoi_bbox: [127.9, 34.0, 129.5, 35.1],
-        priority: "COMMERCIAL",
-        width: 1024,
-        height: 1024,
-        cloud_percent: 0,
-        max_cloud_cover_percent: null,
-        max_off_nadir_deg: null,
-        min_sun_elevation_deg: null,
-        incidence_min_deg: 22,
-        incidence_max_deg: 38,
-        look_side: "ANY",
-        pass_direction: "ANY",
-        polarization: "VV",
-        delivery_method: "DOWNLOAD",
-        delivery_path: null,
-        generation_mode: "INTERNAL",
-        fail_probability: 0.05,
-      },
+    const UPLINK_PRESETS_BY_SATELLITE_ID = {
+      "KOMPSAT-3": { mission_name: "국토 정사영상 갱신", aoi_name: "수도권", aoi_center_lat: 37.56, aoi_center_lon: 126.98, aoi_bbox: [126.75, 37.40, 127.22, 37.72], priority: "COMMERCIAL", width: 1536, height: 1536, cloud_percent: 15, max_cloud_cover_percent: 25, max_off_nadir_deg: 20, min_sun_elevation_deg: 25, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "KOMPSAT-3A": { mission_name: "야간 산불 열원 탐지", aoi_name: "강원 산림", aoi_center_lat: 37.75, aoi_center_lon: 128.45, aoi_bbox: [128.05, 37.45, 128.85, 38.05], priority: "URGENT", width: 1280, height: 1280, cloud_percent: 20, max_cloud_cover_percent: 30, max_off_nadir_deg: 25, min_sun_elevation_deg: 10, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "KOMPSAT-7": { mission_name: "도시변화 탐지", aoi_name: "부산 도심", aoi_center_lat: 35.18, aoi_center_lon: 129.07, aoi_bbox: [128.94, 35.08, 129.20, 35.27], priority: "COMMERCIAL", width: 1536, height: 1536, cloud_percent: 12, max_cloud_cover_percent: 20, max_off_nadir_deg: 18, min_sun_elevation_deg: 22, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "KOMPSAT-5": { mission_name: "홍수지역 SAR 판독", aoi_name: "낙동강 하류", aoi_center_lat: 35.15, aoi_center_lon: 128.95, aoi_bbox: [128.65, 34.95, 129.20, 35.35], priority: "URGENT", width: 1024, height: 1024, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 25, incidence_max_deg: 42, look_side: "RIGHT", pass_direction: "DESCENDING", polarization: "VV", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "KOMPSAT-6": { mission_name: "정밀 레이더 표적 재식별", aoi_name: "동해 연안", aoi_center_lat: 37.48, aoi_center_lon: 129.19, aoi_bbox: [128.95, 37.15, 129.45, 37.75], priority: "URGENT", width: 1280, height: 1280, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 20, incidence_max_deg: 40, look_side: "LEFT", pass_direction: "ASCENDING", polarization: "VH", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "GK-2A": { mission_name: "태풍 실황 추적", aoi_name: "한반도 남해", aoi_center_lat: 33.8, aoi_center_lon: 127.2, aoi_bbox: [124.5, 31.0, 130.0, 36.5], priority: "URGENT", width: 1024, height: 1024, cloud_percent: 40, max_cloud_cover_percent: 60, max_off_nadir_deg: 35, min_sun_elevation_deg: 10, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "GK-2B": { mission_name: "미세먼지 이동 추적", aoi_name: "서해-수도권", aoi_center_lat: 36.2, aoi_center_lon: 125.8, aoi_bbox: [123.5, 34.5, 128.0, 38.0], priority: "BACKGROUND", width: 1024, height: 1024, cloud_percent: 35, max_cloud_cover_percent: 55, max_off_nadir_deg: 30, min_sun_elevation_deg: 12, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "425-PROJECT-1": { mission_name: "전략표적 EO/IR 감시", aoi_name: "북부 접경", aoi_center_lat: 38.12, aoi_center_lon: 127.05, aoi_bbox: [126.75, 37.90, 127.35, 38.35], priority: "URGENT", width: 1536, height: 1536, cloud_percent: 10, max_cloud_cover_percent: 18, max_off_nadir_deg: 16, min_sun_elevation_deg: 22, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "425-PROJECT-2": { mission_name: "악천후 표적 감시", aoi_name: "중부 접경", aoi_center_lat: 38.05, aoi_center_lon: 127.55, aoi_bbox: [127.20, 37.85, 127.95, 38.25], priority: "URGENT", width: 1280, height: 1280, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 20, incidence_max_deg: 38, look_side: "ANY", pass_direction: "ANY", polarization: "VV", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "425-PROJECT-3": { mission_name: "SAR 군집 감시 #3", aoi_name: "서부 해안", aoi_center_lat: 36.95, aoi_center_lon: 126.45, aoi_bbox: [126.0, 36.6, 126.9, 37.3], priority: "URGENT", width: 1024, height: 1024, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 22, incidence_max_deg: 40, look_side: "RIGHT", pass_direction: "DESCENDING", polarization: "VV", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "425-PROJECT-4": { mission_name: "SAR 군집 감시 #4", aoi_name: "중부 내륙", aoi_center_lat: 37.45, aoi_center_lon: 127.45, aoi_bbox: [127.05, 37.15, 127.9, 37.75], priority: "URGENT", width: 1024, height: 1024, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 20, incidence_max_deg: 39, look_side: "LEFT", pass_direction: "ASCENDING", polarization: "VH", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "425-PROJECT-5": { mission_name: "SAR 군집 감시 #5", aoi_name: "동부 산악", aoi_center_lat: 37.82, aoi_center_lon: 128.25, aoi_bbox: [127.95, 37.45, 128.6, 38.1], priority: "URGENT", width: 1024, height: 1024, cloud_percent: 0, max_cloud_cover_percent: null, max_off_nadir_deg: null, min_sun_elevation_deg: null, incidence_min_deg: 21, incidence_max_deg: 40, look_side: "ANY", pass_direction: "ANY", polarization: "VV", delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "CAS500-1": { mission_name: "국토 자원 관리", aoi_name: "전라 농경지", aoi_center_lat: 35.05, aoi_center_lon: 126.9, aoi_bbox: [126.55, 34.75, 127.3, 35.35], priority: "COMMERCIAL", width: 1024, height: 1024, cloud_percent: 18, max_cloud_cover_percent: 28, max_off_nadir_deg: 20, min_sun_elevation_deg: 20, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "CAS500-2": { mission_name: "재난 대응 표준 관측", aoi_name: "충청 내륙", aoi_center_lat: 36.55, aoi_center_lon: 127.45, aoi_bbox: [127.0, 36.2, 127.9, 36.9], priority: "URGENT", width: 1280, height: 1280, cloud_percent: 20, max_cloud_cover_percent: 30, max_off_nadir_deg: 22, min_sun_elevation_deg: 18, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
+      "NEONSAT": { mission_name: "초소형 군집 모니터링", aoi_name: "수도권 순환", aoi_center_lat: 37.45, aoi_center_lon: 127.15, aoi_bbox: [126.8, 37.1, 127.6, 37.8], priority: "COMMERCIAL", width: 1024, height: 1024, cloud_percent: 22, max_cloud_cover_percent: 35, max_off_nadir_deg: 24, min_sun_elevation_deg: 16, incidence_min_deg: null, incidence_max_deg: null, look_side: "ANY", pass_direction: "ANY", polarization: null, delivery_method: "DOWNLOAD", delivery_path: null, generation_mode: "EXTERNAL", fail_probability: 0.03 },
     };
 
     function getTypeFallbackPreset(satType) {
@@ -1575,7 +1479,7 @@
           polarization: "VV",
           delivery_method: "DOWNLOAD",
           delivery_path: "",
-          generation_mode: "INTERNAL",
+          generation_mode: "EXTERNAL",
           fail_probability: 0.05,
         };
       }
@@ -1599,7 +1503,7 @@
         polarization: "",
         delivery_method: "DOWNLOAD",
         delivery_path: "",
-        generation_mode: "INTERNAL",
+        generation_mode: "EXTERNAL",
         fail_probability: 0.05,
       };
     }
@@ -1618,7 +1522,7 @@
 
     function applyUplinkPresetForSatellite(sat) {
       if (!sat) return;
-      const seedPreset = UPLINK_PRESETS_BY_SEED_NAME[sat.name];
+      const seedPreset = sat.satellite_id ? UPLINK_PRESETS_BY_SATELLITE_ID[sat.satellite_id] : null;
       const preset = seedPreset || getTypeFallbackPreset(sat.type);
       document.getElementById("missionName").value = toInputValue(preset.mission_name);
       document.getElementById("aoiName").value = toInputValue(preset.aoi_name);
@@ -1640,7 +1544,7 @@
       document.getElementById("deliveryMethod").value = toInputValue(preset.delivery_method || "DOWNLOAD");
       document.getElementById("deliveryPath").value = toInputValue(preset.delivery_path);
       document.getElementById("failProbability").value = toInputValue(preset.fail_probability);
-      setGenerationMode(toInputValue(preset.generation_mode || "INTERNAL"));
+      setGenerationMode(toInputValue(preset.generation_mode || "EXTERNAL"));
     }
 
     function onUplinkSatelliteChanged() {
@@ -1742,6 +1646,18 @@
       showTab(id, btn || null);
     }
 
+    function openTabAndScroll(tabId, sectionId) {
+      openTabById(tabId);
+      const scrollToSection = () => {
+        const section = document.getElementById(sectionId);
+        if (!section) return;
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      requestAnimationFrame(() => {
+        setTimeout(scrollToSection, 30);
+      });
+    }
+
     function toggleDiagGroup() {
       const group = document.getElementById("diagGroup");
       const toggleBtn = document.getElementById("diagGroupToggleBtn");
@@ -1750,11 +1666,18 @@
       toggleBtn.textContent = isOpen ? "Diagnostics ▾" : "Diagnostics ▸";
     }
 
-    function markButtonSelected(btn) {
-      if (!btn || btn.classList.contains("tab-btn") || btn.closest("header") || btn.id === "debugLogToggle" || btn.classList.contains("mini-refresh-btn")) return;
-      document.querySelectorAll("main button.selected").forEach((el) => el.classList.remove("selected"));
-      btn.classList.add("selected");
+    function setDiagGroupOpen(open) {
+      const group = document.getElementById("diagGroup");
+      const toggleBtn = document.getElementById("diagGroupToggleBtn");
+      if (!group || !toggleBtn) return;
+      group.classList.toggle("open", !!open);
+      toggleBtn.textContent = open ? "Diagnostics ▾" : "Diagnostics ▸";
     }
+
+    // Force closed on browser page restore (bfcache) as well.
+    window.addEventListener("pageshow", () => {
+      setDiagGroupOpen(false);
+    });
 
     function clearLogs() {
       stopFetchFollow();
@@ -1792,6 +1715,30 @@
       await loadAllCommands();
       renderCompletedLinks();
       await refreshDashboard();
+    }
+
+    async function clearDb() {
+      const ok = window.confirm("SQLite DB 초기화 + 시드 재생성 + 이미지/메타데이터 삭제를 진행할까요?");
+      if (!ok) return;
+      const { response, payload } = await api("/admin/db/clear", { method: "POST" });
+      if (!response.ok) {
+        document.getElementById("healthResult").textContent = `Clear DB failed: ${JSON.stringify(payload)}`;
+        return;
+      }
+      stopFetchFollow();
+      currentCommandId = "";
+      document.getElementById("commandIdInput").value = "";
+      allCommands.clear();
+      apiCallLogs = [];
+      renderApiLogs();
+      await listSatellites();
+      await listGroundStations();
+      await listRequestors();
+      await loadAllCommands();
+      renderCompletedLinks();
+      await refreshDashboard();
+      document.getElementById("healthResult").textContent =
+        `DB cleared. Seeded satellites=${payload.seeded_satellites}, ground_stations=${payload.seeded_ground_stations}, requestors=${payload.seeded_requestors}, removed_images=${payload.deleted_images}`;
     }
 
     function logCall(method, path, status, summary = "") {
@@ -2009,6 +1956,20 @@
       document.getElementById("aoiCenterLon").value = Number(lon).toFixed(6);
     }
 
+    function clampExternalMapZoom(value, fallback = EXTERNAL_MAP_ZOOM_DEFAULT) {
+      const parsed = Number(value);
+      const base = Number.isFinite(parsed) ? parsed : fallback;
+      const rounded = Math.round(base);
+      return Math.max(EXTERNAL_MAP_ZOOM_MIN, Math.min(EXTERNAL_MAP_ZOOM_MAX, rounded));
+    }
+
+    function normalizeExternalMapZoomInput() {
+      const input = document.getElementById("externalMapZoom");
+      const clamped = clampExternalMapZoom(input ? input.value : EXTERNAL_MAP_ZOOM_DEFAULT);
+      if (input) input.value = String(clamped);
+      return clamped;
+    }
+
     async function api(path, options = {}) {
       const method = options.method || "GET";
       if (isManagementApiCall(method, path) && !canManageInfra()) {
@@ -2047,7 +2008,7 @@
 
       const width = Number(document.getElementById("imgWidth").value) || 768;
       const height = Number(document.getElementById("imgHeight").value) || 768;
-      const zoom = Number(document.getElementById("externalMapZoom").value) || 19;
+      const zoom = normalizeExternalMapZoomInput();
       const source = document.getElementById("externalMapSource").value || "OSM";
       const qs = new URLSearchParams({
         lat: String(center.lat),
@@ -2214,6 +2175,7 @@
     async function createSatellite() {
       if (!canManageInfra()) return;
       const body = {
+        satellite_id: document.getElementById("newSatId").value.trim() || null,
         name: document.getElementById("newSatName").value,
         type: document.getElementById("newSatType").value,
         status: document.getElementById("newSatStatus").value,
@@ -2240,6 +2202,7 @@
     async function createGroundStation() {
       if (!canManageInfra()) return;
       const body = {
+        ground_station_id: document.getElementById("newGroundStationId").value.trim() || null,
         name: document.getElementById("newGroundStationName").value,
         type: document.getElementById("newGroundStationType").value,
         status: document.getElementById("newGroundStationStatus").value,
@@ -2311,13 +2274,14 @@
       tbody.innerHTML = rows.map((sat) => `
         <tr>
           <td>${sat.satellite_id}</td>
+          <td>${sat.internal_satellite_code || "-"}</td>
           <td>${sat.name}</td>
           <td>${sat.type}</td>
           <td><span class="${sat.status === "AVAILABLE" ? "ok" : "fail"}">${sat.status}</span></td>
           <td>${sat.profile.orbit_type}, ${sat.profile.default_product_type}</td>
           <td>
             ${canManageInfra()
-              ? `<a href="#" class="action-link" onclick="startEditSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}','${sat.status}'); return false;">Edit</a>
+              ? `<a href="#" class="action-link" onclick="startEditSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}','${sat.type}','${sat.status}'); return false;">Edit</a>
                  <a href="#" class="action-link delete" onclick="deleteSatellite('${sat.satellite_id}','${escapeHtml(sat.name)}'); return false;">Delete</a>`
               : `<span class="action-disabled">Disabled</span>`}
           </td>
@@ -2326,7 +2290,7 @@
 
       const sel = document.getElementById("uplinkSatId");
       const prevSelected = sel.value;
-      sel.innerHTML = rows.map((sat) => `<option value="${sat.satellite_id}">${sat.name} (${sat.type}, ${sat.status})</option>`).join("");
+      sel.innerHTML = rows.map((sat) => `<option value="${sat.satellite_id}">${sat.satellite_id} | ${sat.name} (${sat.type}, ${sat.status})</option>`).join("");
       if (prevSelected && satellitesById.has(prevSelected)) {
         sel.value = prevSelected;
       }
@@ -2347,6 +2311,7 @@
         groundTable.innerHTML = rows.map((station) => `
           <tr>
             <td>${station.ground_station_id}</td>
+            <td>${station.internal_ground_station_code || "-"}</td>
             <td>${station.name}</td>
             <td>${station.type}</td>
             <td><span class="${station.status === "OPERATIONAL" ? "ok" : "fail"}">${station.status}</span></td>
@@ -2534,10 +2499,11 @@
       }
     }
 
-    function startEditSatellite(satelliteId, name, status) {
+    function startEditSatellite(satelliteId, name, type, status) {
       if (!canManageInfra()) return;
       editingSatelliteId = satelliteId;
       document.getElementById("modalEditSatName").value = name;
+      document.getElementById("modalEditSatType").value = type;
       document.getElementById("modalEditSatStatus").value = status;
       const backdrop = document.getElementById("satEditModalBackdrop");
       backdrop.style.display = "flex";
@@ -2553,6 +2519,7 @@
       backdrop.style.display = "none";
       editingSatelliteId = "";
       document.getElementById("modalEditSatName").value = "";
+      document.getElementById("modalEditSatType").value = "EO_OPTICAL";
       document.getElementById("modalEditSatStatus").value = "AVAILABLE";
     }
 
@@ -2580,6 +2547,7 @@
       if (!editingSatelliteId) return;
       const body = {
         name: document.getElementById("modalEditSatName").value,
+        type: document.getElementById("modalEditSatType").value,
         status: document.getElementById("modalEditSatStatus").value,
       };
       const { response } = await api(`/satellites/${editingSatelliteId}`, {
@@ -2720,7 +2688,7 @@
         delivery_path: document.getElementById("deliveryPath").value.trim() || null,
         generation_mode: generationMode,
         external_map_source: document.getElementById("externalMapSource").value,
-        external_map_zoom: toNum(document.getElementById("externalMapZoom").value, 19),
+        external_map_zoom: clampExternalMapZoom(document.getElementById("externalMapZoom").value),
         fail_probability: toNum(document.getElementById("failProbability").value, 0),
       };
       const { response, payload } = await api("/uplink", {
@@ -2876,7 +2844,7 @@
       document.getElementById("koreanSeedSummary").textContent =
         `Total ${satInfo.count} satellites (EO ${eoCount}, SAR ${sarCount})`;
       document.getElementById("koreanSeedNames").textContent = JSON.stringify(
-        satInfo.rows.map((s) => ({ name: s.name, type: s.type })),
+        satInfo.rows.map((s) => ({ satellite_id: s.satellite_id || null, name: s.name, type: s.type, baseline_status: s.baseline_status || null })),
         null,
         2,
       );
@@ -3071,11 +3039,48 @@
       document.getElementById("scnFail").textContent = `Fail: ${failCount}`;
     }
 
+    const SCENARIO_RUN_PROFILES = {
+      "SCN-001": { name: "국토 정사영상 갱신", satellite_ids: ["KOMPSAT-3", "CAS500-1"], mission_name: "국토 정사영상 갱신", aoi_name: "수도권", require_type: "EO_OPTICAL" },
+      "SCN-002": { name: "야간 산불 열원 탐지", satellite_ids: ["KOMPSAT-3A"], mission_name: "야간 산불 열원 탐지", aoi_name: "강원 산림", require_type: "EO_OPTICAL" },
+      "SCN-003": { name: "도시변화 탐지", satellite_ids: ["KOMPSAT-7"], mission_name: "도시변화 탐지", aoi_name: "부산 도심", require_type: "EO_OPTICAL" },
+      "SCN-004": { name: "홍수지역 SAR 판독", satellite_ids: ["KOMPSAT-5"], mission_name: "홍수지역 SAR 판독", aoi_name: "낙동강 하류", require_type: "SAR" },
+      "SCN-005": { name: "정밀 레이더 표적 재식별", satellite_ids: ["KOMPSAT-6"], mission_name: "정밀 레이더 표적 재식별", aoi_name: "동해 연안", require_type: "SAR" },
+      "SCN-006": { name: "태풍 실황 추적", satellite_ids: ["GK-2A"], mission_name: "태풍 실황 추적", aoi_name: "한반도 남해", require_type: "EO_OPTICAL" },
+      "SCN-007": { name: "미세먼지 이동 추적", satellite_ids: ["GK-2B"], mission_name: "미세먼지 이동 추적", aoi_name: "서해-수도권", require_type: "EO_OPTICAL" },
+      "SCN-008": { name: "전략표적 EO/IR 감시", satellite_ids: ["425-PROJECT-1"], mission_name: "전략표적 EO/IR 감시", aoi_name: "북부 접경", require_type: "EO_OPTICAL" },
+      "SCN-009": { name: "악천후 표적 감시", satellite_ids: ["425-PROJECT-2"], mission_name: "악천후 표적 감시", aoi_name: "중부 접경", require_type: "SAR" },
+      "SCN-010": { name: "SAR 군집 재방문 감시", satellite_ids: ["425-PROJECT-3", "425-PROJECT-4", "425-PROJECT-5"], mission_name: "SAR 군집 재방문 감시", aoi_name: "동부 산악", require_type: "SAR" },
+      "SCN-011": { name: "재난 대응 표준 관측", satellite_ids: ["CAS500-2"], mission_name: "재난 대응 표준 관측", aoi_name: "충청 내륙", require_type: "EO_OPTICAL" },
+      "SCN-012": { name: "초소형 군집 모니터링", satellite_ids: ["NEONSAT"], mission_name: "초소형 군집 모니터링", aoi_name: "수도권 순환", require_type: "EO_OPTICAL" },
+    };
+
+    function pickScenarioSatellite(rows, scenario) {
+      return rows.find((sat) => sat.status === "AVAILABLE" && scenario.satellite_ids.includes(sat.satellite_id));
+    }
+
+    async function waitUntilTerminal(commandId, tries = 20, delayMs = 700) {
+      let cmd = null;
+      for (let i = 0; i < tries; i++) {
+        document.getElementById("commandIdInput").value = commandId;
+        cmd = await fetchCommand();
+        if (cmd && (cmd.state === "DOWNLINK_READY" || cmd.state === "FAILED")) break;
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
+      return cmd;
+    }
+
     async function runScenario(id) {
       const out = [];
       const push = (m) => { out.push(m); document.getElementById("scenarioOutput").textContent = out.join("\n"); };
       try {
-        push(`[${id}] start`);
+        const scenario = SCENARIO_RUN_PROFILES[id];
+        if (!scenario) {
+          push(`[${id}] unknown scenario id`);
+          markScenario(false);
+          return;
+        }
+
+        push(`[${id}] ${scenario.name} start`);
         const sats = await listSatellites();
         let stations = await listGroundStations();
         let reqRows = await listRequestors();
@@ -3092,83 +3097,64 @@
         const freshSats = await listSatellites();
         const primaryStationId = stations[0]?.ground_station_id || null;
         const primaryRequestorId = reqRows.find((r) => r.ground_station_id === primaryStationId)?.requestor_id || null;
-
-        if (id === "SCN-001") {
-          const eo = freshSats.find(s => s.type === "EO_OPTICAL" && s.status === "AVAILABLE");
-          const up = await sendUplink({ satellite_id: eo.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-001", aoi_name: "aoi", width: 512, height: 512, cloud_percent: 12, fail_probability: 0 });
-          for (let i = 0; i < 12; i++) {
-            document.getElementById("commandIdInput").value = up.command_id;
-            const cmd = await fetchCommand();
-            if (cmd.state === "DOWNLINK_READY") break;
-            await new Promise(r => setTimeout(r, 400));
-          }
-          const cmd = allCommands.get(up.command_id);
-          const ok = cmd && cmd.state === "DOWNLINK_READY";
-          push(ok ? "PASS: EO downlink ready" : `FAIL: state=${cmd ? cmd.state : "unknown"}`);
-          markScenario(ok);
+        if (!primaryStationId || !primaryRequestorId) {
+          push("FAIL: no ground station/requestor seeded");
+          markScenario(false);
           return;
         }
 
-        if (id === "SCN-002") {
-          const sar = freshSats.find(s => s.type === "SAR" && s.status === "AVAILABLE");
-          const up = await sendUplink({ satellite_id: sar.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-002", aoi_name: "aoi", width: 512, height: 512, cloud_percent: 10, fail_probability: 0 });
-          let cmd = null;
-          for (let i = 0; i < 12; i++) {
-            document.getElementById("commandIdInput").value = up.command_id;
-            cmd = await fetchCommand();
-            if (cmd.state === "DOWNLINK_READY") break;
-            await new Promise(r => setTimeout(r, 400));
-          }
-          const ok = cmd && cmd.product_metadata && cmd.product_metadata.product_type === "GRD";
-          push(ok ? "PASS: SAR metadata detected" : "FAIL: SAR metadata missing");
-          markScenario(ok);
+        const sat = pickScenarioSatellite(freshSats, scenario);
+        if (!sat) {
+          push(`FAIL: no AVAILABLE satellite for ${scenario.satellite_ids.join(", ")}`);
+          markScenario(false);
           return;
         }
 
-        if (id === "SCN-003") {
-          const { response } = await api("/downloads/cmd-not-exists");
-          const ok = response.status === 404;
-          push(ok ? "PASS: 404 detected" : `FAIL: status=${response.status}`);
-          markScenario(ok);
+        const preset = (sat.satellite_id && UPLINK_PRESETS_BY_SATELLITE_ID[sat.satellite_id]) || getTypeFallbackPreset(sat.type);
+        const uplinkPayload = {
+          satellite_id: sat.satellite_id,
+          ground_station_id: primaryStationId,
+          requestor_id: primaryRequestorId,
+          mission_name: scenario.mission_name || preset.mission_name || id,
+          aoi_name: scenario.aoi_name || preset.aoi_name || "aoi",
+          aoi_center_lat: preset.aoi_center_lat,
+          aoi_center_lon: preset.aoi_center_lon,
+          aoi_bbox: preset.aoi_bbox,
+          width: preset.width || 1024,
+          height: preset.height || 1024,
+          cloud_percent: preset.cloud_percent ?? 10,
+          max_cloud_cover_percent: preset.max_cloud_cover_percent ?? null,
+          max_off_nadir_deg: preset.max_off_nadir_deg ?? null,
+          min_sun_elevation_deg: preset.min_sun_elevation_deg ?? null,
+          incidence_min_deg: preset.incidence_min_deg ?? null,
+          incidence_max_deg: preset.incidence_max_deg ?? null,
+          look_side: preset.look_side || "ANY",
+          pass_direction: preset.pass_direction || "ANY",
+          polarization: preset.polarization ?? null,
+          generation_mode: preset.generation_mode || "EXTERNAL",
+          fail_probability: 0,
+        };
+
+        push(`satellite: ${sat.satellite_id} / type=${sat.type}`);
+        const up = await sendUplink(uplinkPayload);
+        const cmd = await waitUntilTerminal(up.command_id);
+        if (!cmd) {
+          push("FAIL: command polling timeout");
+          markScenario(false);
           return;
         }
 
-        if (id === "SCN-004") {
-          const eo = freshSats.find(s => s.type === "EO_OPTICAL" && s.status === "AVAILABLE");
-          const up = await sendUplink({ satellite_id: eo.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-004", aoi_name: "aoi", fail_probability: 0 });
-          const { response } = await api(`/downloads/${up.command_id}`);
-          const ok = response.status === 409;
-          push(ok ? "PASS: 409 detected before ready" : `FAIL: status=${response.status}`);
-          markScenario(ok);
-          return;
+        const isTerminalReady = cmd.state === "DOWNLINK_READY";
+        const typeMatched = !scenario.require_type || sat.type === scenario.require_type;
+        const missionMatched = cmd.mission_name === uplinkPayload.mission_name;
+        const ok = isTerminalReady && typeMatched && missionMatched;
+        if (ok) {
+          push(`PASS: ${id} ready (${cmd.command_id})`);
+        } else {
+          push(`FAIL: state=${cmd.state}, typeMatched=${typeMatched}, missionMatched=${missionMatched}`);
         }
-
-        if (id === "SCN-005") {
-          const { payload } = await api("/satellites", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name: "maint-sat", type: "EO_OPTICAL", status: "MAINTENANCE" }),
-          });
-          const up = await sendUplink({ satellite_id: payload.satellite_id, ground_station_id: primaryStationId, requestor_id: primaryRequestorId, mission_name: "scn-005", aoi_name: "aoi", fail_probability: 0 });
-          document.getElementById("commandIdInput").value = up.command_id;
-          const cmd = await fetchCommand();
-          const ok = cmd.state === "FAILED";
-          push(ok ? "PASS: maintenance fail verified" : `FAIL: state=${cmd.state}`);
-          markScenario(ok);
-          return;
-        }
-
-        if (id === "SCN-006") {
-          const { response } = await api("/uplink", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ satellite_id: "sat-invalid-1234", mission_name: "scn-006", aoi_name: "aoi" }),
-          });
-          const ok = response.status === 404;
-          push(ok ? "PASS: invalid satellite 404" : `FAIL: status=${response.status}`);
-          markScenario(ok);
-          return;
-        }
+        markScenario(ok);
+        return;
       } catch (e) {
         push(`ERROR: ${String(e)}`);
         markScenario(false);
@@ -3176,15 +3162,21 @@
     }
 
     async function bootstrap() {
-      document.addEventListener("click", (e) => {
-        const btn = e.target.closest("button");
-        if (!btn || btn.classList.contains("tab-btn")) return;
-        markButtonSelected(btn);
-      });
       initMockUsers();
       document.getElementById("baseUrlInput").value = apiBaseUrl;
       document.getElementById("apiKeyInput").value = apiKey;
+      const zoomInput = document.getElementById("externalMapZoom");
+      if (zoomInput) {
+        zoomInput.min = String(EXTERNAL_MAP_ZOOM_MIN);
+        zoomInput.max = String(EXTERNAL_MAP_ZOOM_MAX);
+        zoomInput.placeholder = String(EXTERNAL_MAP_ZOOM_DEFAULT);
+        zoomInput.addEventListener("change", normalizeExternalMapZoomInput);
+        zoomInput.addEventListener("blur", normalizeExternalMapZoomInput);
+      }
+      normalizeExternalMapZoomInput();
+      setBaseUrl();
       initCustomTooltips();
+      setDiagGroupOpen(false);
       initPreviewPanHandlers();
       updateDebugToggleButton();
       applyHeaderDebugVisibility();

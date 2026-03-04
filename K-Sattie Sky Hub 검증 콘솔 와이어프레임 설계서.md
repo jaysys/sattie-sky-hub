@@ -4,8 +4,56 @@
 - 화면 타이틀: K-Sattie Sky Hub (uplink수신-> 위성촬영 -> downlink전송)
 - 프로젝트: K-Sattie Sky Hub
 - 목적 URL: `http://localhost:6005`
-- 버전: v0.4
-- 작성일: 2026-03-01
+- 버전: v0.5
+- 작성일: 2026-03-04
+
+## 0. 현행화 우선 규칙 (2026-03-04)
+
+아래 항목은 본 문서의 이전 섹션보다 우선 적용되는 현행 콘솔 기준이다.
+
+- 좌측 메뉴 구조
+  - `Dashboard`
+  - `Satellites`
+  - `Satellites Performance`
+  - `Payload Monitoring`
+  - `Diagnostics` (기본 접힘 `▸`)
+    - `Send A Uplink`
+    - `Multi Payload Scenario`
+    - `Commands Monitor`
+
+- Satellites 테이블 컬럼
+  - `satellite_id`
+  - `internal_satellite_code`
+  - `name`
+  - `type`
+  - `status`
+  - `profile`
+  - `actions`
+
+- Ground Stations 테이블 컬럼
+  - `ground_station_id`
+  - `internal_ground_station_code`
+  - `name`
+  - `type`
+  - `status`
+  - `location`
+  - `actions`
+
+- Create 폼 입력
+  - Create Satellite: `satellite_id(optional)` + `name` + `type` + `status`
+  - Create Ground Station: `ground_station_id(optional)` + `name` + `type` + `status` + `location`
+
+- Edit 동작
+  - Satellite Edit에서 `name`, `type`, `status` 변경 가능
+  - Ground Station Edit에서 `name`, `status`, `location` 변경 가능
+
+- 초기 데이터
+  - 서버 기동 시 기본으로 Mock Satellites/Ground Stations/Requestors 자동 시드
+  - 수동 시드 버튼은 재실행(idempotent) 용도
+
+- 식별자 규칙
+  - `satellite_id`: 영문 모델명 기반 ID (예: `KOMPSAT-3`, `425-PROJECT-1`)
+  - `ground_station_id`: 지역명+이니셜 약칭 ID (예: `DAE-MC`)
 
 ## 1. 목적
 
@@ -21,11 +69,11 @@
 단일 페이지 탭 구조:
 
 - `Dashboard`
-- `Satellites Status`
+- `Satellites`
 - `Satellites Performance`
-- `Commands Status`
-- `Send 1 Uplink Scenario`
-- `Multi API Scenario`
+- `Commands Monitor`
+- `Send A Uplink`
+- `Multi Payload Scenario`
 
 고정 공통 영역:
 
@@ -41,11 +89,11 @@
 +----------------------------------------------------------------------------------+
 | Left Nav Tabs            | Main Content                                          |
 | - Dashboard              | 선택한 탭 카드/테이블/폼 표시                         |
-| - Satellites Status      |                                                       |
+| - Satellites      |                                                       |
 | - Satellites Performance |                                                       |
-| - Commands Status        |                                                       |
-| - Send 1 Uplink Scenario |                                                       |
-| - Multi API Scenario     |                                                       |
+| - Commands Monitor        |                                                       |
+| - Send A Uplink |                                                       |
+| - Multi Payload Scenario     |                                                       |
 +----------------------------------------------------------------------------------+
 | Recent API Calls (Time / Method / Path / Status / Summary)                       |
 | - 컬럼 비율: 10% / 10% / 20% / 10% / 50%                                         |
@@ -82,7 +130,7 @@
 
 - Dashboard 탭 전환 시 즉시 데이터 갱신
 
-### 4.2 Satellites Status
+### 4.2 Satellites
 
 목적:
 
@@ -114,7 +162,7 @@
 - `Actions`는 버튼 박스가 아닌 밑줄 링크(`Edit`, `Delete`)로 표시
 - Ground Station도 동일하게 `Edit/Delete` 링크 및 편집 모달 제공
 
-### 4.3 Send 1 Uplink Scenario
+### 4.3 Send A Uplink
 
 목적:
 
@@ -144,9 +192,9 @@
 - `외부생성` 선택 시 위경도 또는 bbox를 기반으로 외부 지도 타일 이미지 생성 경로 사용
 - 위 생성 모드/외부맵 옵션은 시뮬레이터 전용 선택 항목(실운영 연동에서는 필수 아님)
 - 정상 입력 시 `POST /uplink` 실행 후 결과 JSON 표시
-- 성공 시 즉시 `Commands Status` 탭으로 자동 전환
+- 성공 시 즉시 `Commands Monitor` 탭으로 자동 전환
 
-### 4.4 Commands Status
+### 4.4 Commands Monitor
 
 목적:
 
@@ -174,7 +222,7 @@
 - `POST /images/clear` 이후 링크 테이블에서 해당 다운로드 항목 제거
 - 폴링 중 과도한 요청 방지를 위해 대시보드 전체 갱신 호출을 최소화하고, 완료 링크는 로컬 캐시 기반으로 즉시 반영
 
-### 4.5 Multi API Scenario
+### 4.5 Multi Payload Scenario
 
 목적:
 
@@ -220,7 +268,7 @@
 
 - 사용자 유형:
   - `admin`: 모든 탭 접근 + 위성/지상국 관리(Create/Update/Delete/Seed) 허용
-  - `operator`: `Satellites Status` 탭 비노출, 위성/지상국 관리 API UI 호출 차단(시뮬레이션 `403`)
+  - `operator`: `Satellites` 탭 비노출, 위성/지상국 관리 API UI 호출 차단(시뮬레이션 `403`)
 - Header의 Mock User 셀렉터로 사용자 전환 가능
 - 현재 사용자 정보는 Header에 표시되며 local storage(`simMockUserId`)에 유지
 
@@ -250,9 +298,9 @@
 ## 10. 운영 검증 순서(권장)
 
 1. Dashboard에서 `Health Check` 실행
-2. `admin` 사용자 선택 후 Satellites Status에서 `Setup Initial Mock Satellites` 실행
-3. Send 1 Uplink Scenario에서 유효 파라미터 입력 후 `Send Uplink`
-4. 자동 전환된 Commands Status에서 상태 완료(`DOWNLINK_READY`) 확인
+2. `admin` 사용자 선택 후 Satellites에서 `Setup Initial Mock Satellites` 실행
+3. Send A Uplink에서 유효 파라미터 입력 후 `Send Uplink`
+4. 자동 전환된 Commands Monitor에서 상태 완료(`DOWNLINK_READY`) 확인
 5. 다운로드 링크 검증
 6. `Clear Images` 실행 후 링크 테이블 정리 상태 확인
-7. Multi API Scenario에서 오류 케이스 회귀 확인
+7. Multi Payload Scenario에서 오류 케이스 회귀 확인
